@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SML Study Games</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+<body>
+  <header>
+    <h1>🎓 SML Study Games</h1>
+    <p class="subtitle">Statistical Machine Learning · Uni Tübingen</p>
+    <nav id="nav">
+      <button data-view="home" class="active">Home</button>
+      <button data-view="memory">🃏 Memory</button>
+      <button data-view="quiz">❓ Quiz</button>
+      <button data-view="trainer">📦 Trainer</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ── Home ─────────────────────────────────────────── -->
+    <section id="view-home" class="view">
+      <div class="game-cards">
+        <div class="game-card" data-goto="memory">
+          <div class="game-icon">🃏</div>
+          <h2>Memory</h2>
+          <p>Flip tiles and match each term with its definition. Fewer moves = better score.</p>
+        </div>
+        <div class="game-card" data-goto="quiz">
+          <div class="game-icon">❓</div>
+          <h2>Quiz</h2>
+          <p>Multiple choice against the clock. Build a streak, beat your high score.</p>
+        </div>
+        <div class="game-card" data-goto="trainer">
+          <div class="game-icon">📦</div>
+          <h2>Trainer</h2>
+          <p>Leitner-box flashcards: recall, reveal, self-grade. Progress is saved locally.</p>
+        </div>
+      </div>
+      <div id="deck-stats" class="deck-stats"></div>
+      <details class="deck-browser">
+        <summary>Browse the full deck</summary>
+        <div id="deck-list"></div>
+      </details>
+    </section>
+
+    <!-- ── Memory ───────────────────────────────────────── -->
+    <section id="view-memory" class="view hidden">
+      <div class="toolbar">
+        <select id="memory-topic"></select>
+        <button id="memory-new" class="primary">New game</button>
+        <span id="memory-status" class="status"></span>
+      </div>
+      <div id="memory-board" class="memory-board"></div>
+      <div id="memory-done" class="result hidden"></div>
+    </section>
+
+    <!-- ── Quiz ─────────────────────────────────────────── -->
+    <section id="view-quiz" class="view hidden">
+      <div class="toolbar">
+        <select id="quiz-topic"></select>
+        <button id="quiz-new" class="primary">Start quiz</button>
+        <span id="quiz-status" class="status"></span>
+      </div>
+      <div id="quiz-area"></div>
+    </section>
+
+    <!-- ── Trainer ──────────────────────────────────────── -->
+    <section id="view-trainer" class="view hidden">
+      <div class="toolbar">
+        <select id="trainer-topic"></select>
+        <span id="trainer-boxes" class="status"></span>
+        <button id="trainer-reset" class="danger">Reset progress</button>
+      </div>
+      <div id="trainer-area"></div>
+    </section>
+  </main>
+
+  <footer>Built from the SML exercise sheets & mock exam · good luck with the exam! 🍀</footer>
+
+  <script src="deck.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
