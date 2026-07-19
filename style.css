@@ -10,6 +10,13 @@
   --bad: #d9534f;
   --border: #d8dce8;
   --shadow: 0 2px 10px rgba(20, 30, 60, 0.08);
+  /* viz palette (validated light-mode steps) */
+  --vz-s1: #2a78d6;
+  --vz-s2: #008300;
+  --vz-s3: #e87ba4;
+  --vz-axis: #c3c2b7;
+  --vz-grid: #e1e0d9;
+  --vz-ink: #898781;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -24,6 +31,13 @@
     --bad: #e5726e;
     --border: #333850;
     --shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    /* viz palette (dark-mode steps — selected, not auto-flipped) */
+    --vz-s1: #3987e5;
+    --vz-s2: #008300;
+    --vz-s3: #d55181;
+    --vz-axis: #383835;
+    --vz-grid: #2c2c2a;
+    --vz-ink: #898781;
   }
 }
 
@@ -78,17 +92,67 @@ footer { text-align: center; color: var(--muted); padding: 1.5rem; font-size: 0.
 .deck-stats { margin: 1.5rem 0 0.5rem; color: var(--muted); text-align: center; }
 .deck-browser { margin-top: 1rem; }
 .deck-browser summary { cursor: pointer; color: var(--accent); font-weight: 600; }
-.deck-topic { margin: 1rem 0 0.4rem; font-size: 1.05rem; }
+.deck-topic { margin: 1.4rem 0 0.5rem; font-size: 1.05rem; }
 .deck-entry {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.7rem 0.9rem;
-  margin: 0.4rem 0;
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin: 0.5rem 0;
+  box-shadow: var(--shadow);
+  transition: transform 0.12s ease, border-color 0.12s ease;
 }
-.deck-entry b { display: block; }
-.deck-entry span { color: var(--muted); font-size: 0.92rem; }
-.deck-entry .detail { display: block; margin-top: 0.25rem; font-size: 0.85rem; color: var(--muted); font-style: italic; }
+.deck-entry:hover { transform: translateX(3px); }
+.deck-entry b { display: block; font-size: 1.02rem; margin-bottom: 0.15rem; }
+.deck-entry span { color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+.deck-entry .detail { display: block; margin-top: 0.3rem; font-size: 0.85rem; color: var(--muted); font-style: italic; }
+.card-chip {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  margin-bottom: 0.35rem;
+}
+
+/* ── Card visualizations (inline SVG sketches) ── */
+.viz {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  margin: 0.7rem auto 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.4rem;
+}
+.viz .vz-ax   { stroke: var(--vz-axis); stroke-width: 1.5; fill: none; }
+.viz .vz-axl  { stroke: var(--vz-ink); stroke-width: 1.5; fill: none; }
+.viz .vz-tick { stroke: var(--vz-axis); stroke-width: 1.5; fill: none; }
+.viz .vz-dash { stroke: var(--vz-ink); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+.viz .vz-dashi{ stroke: var(--vz-ink); stroke-width: 2; stroke-dasharray: 5 4; fill: none; }
+.viz .vz-l1   { stroke: var(--vz-s1); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.viz .vz-l1s  { stroke: var(--vz-s1); stroke-width: 1.5; fill: none; stroke-linecap: round; }
+.viz .vz-l1c  { stroke: var(--vz-s1); stroke-width: 2.5; fill: none; }
+.viz .vz-l2   { stroke: var(--vz-s2); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.viz .vz-l3   { stroke: var(--vz-s3); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.viz .vz-f1   { fill: var(--vz-s1); opacity: 0.13; stroke: none; }
+.viz .vz-ctr  { stroke: var(--vz-ink); stroke-width: 1.2; fill: none; opacity: 0.7; }
+.viz .vz-dot1 { fill: var(--vz-s1); }
+.viz .vz-dot2 { fill: var(--vz-s2); }
+.viz .vz-dot3 { fill: var(--vz-s3); }
+.viz text     { font: 10.5px system-ui, -apple-system, "Segoe UI", sans-serif; }
+.viz .vz-t    { fill: var(--vz-ink); }
+.viz .vz-c1   { fill: var(--vz-s1); font-weight: 600; }
+.viz .vz-c2   { fill: var(--vz-s2); font-weight: 600; }
+.viz .vz-c3   { fill: var(--vz-s3); font-weight: 600; }
 
 /* Toolbar */
 .toolbar { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.2rem; }

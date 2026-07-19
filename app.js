@@ -38,8 +38,9 @@ $("#deck-stats").textContent =
 $("#deck-list").innerHTML = TOPICS.map(t =>
   `<h3 class="deck-topic">${t}</h3>` +
   cardsFor(t).map(c =>
-    `<div class="deck-entry"><b>${c.term}</b><span>${c.def}</span>` +
-    (c.detail ? `<span class="detail">${c.detail}</span>` : "") + `</div>`
+    `<div class="deck-entry"><span class="card-chip">${c.topic}</span><b>${c.term}</b><span>${c.def}</span>` +
+    (c.detail ? `<span class="detail">${c.detail}</span>` : "") +
+    (c.viz || "") + `</div>`
   ).join("")
 ).join("");
 
@@ -150,9 +151,9 @@ const Quiz = {
         });
         if (correct) { this.score++; this.streak++; this.best = Math.max(this.best, this.streak); }
         else { btn.classList.add("wrong"); this.streak = 0; }
-        if (card.detail) {
+        if (card.detail || card.viz) {
           const d = $("#quiz-area .quiz-detail");
-          d.textContent = "💡 " + card.detail;
+          d.innerHTML = (card.detail ? "💡 " + card.detail : "") + (card.viz || "");
           d.classList.remove("hidden");
         }
         const nextBtn = $("#quiz-area .quiz-next");
@@ -225,6 +226,7 @@ const Trainer = {
         <div class="trainer-term">${card.term}</div>
         <div class="trainer-def">${card.def}</div>
         ${card.detail ? `<div class="trainer-detail">💡 ${card.detail}</div>` : ""}
+        ${card.viz || ""}
         <div class="trainer-actions">
           <button class="know">✓ Knew it</button>
           <button class="dont">✗ Didn't know</button>
