@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📐</text></svg>">
+<title>The Residual, Geometrically</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  .up { font-style: normal; }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  @media (max-width: 720px) { .fig-grid { grid-template-columns: 1fr; } }
+  .fig-cell svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 10rem; min-width: 8rem; accent-color: var(--blue); }
+  button.snap {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--blue);
+    background: var(--blue-soft);
+    border: 1px solid var(--blue);
+    border-radius: 5px;
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+  }
+  button.snap:hover { filter: brightness(1.08); }
+  button.snap:focus-visible, input[type="range"]:focus-visible {
+    outline: 2px solid var(--blue); outline-offset: 2px;
+  }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag {
+    color: var(--blue);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--ink);
+    color: var(--surface);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate(-50%, -130%);
+  }
+  .tooltip.on { opacity: 1; }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--blue);
+    background: var(--blue-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  table.vals {
+    border-collapse: collapse;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    margin: 0.6rem auto 0;
+  }
+  table.vals td, table.vals th {
+    padding: 0.25rem 0.8rem;
+    border-bottom: 1px solid var(--line);
+    text-align: right;
+    color: var(--ink-2);
+    font-weight: 400;
+  }
+  details.data { max-width: 41rem; margin: 0.6rem auto 0; }
+  details.data summary {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); cursor: pointer;
+  }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Exercise 1 · Linear Regression &amp; Orthogonality</p>
+  <h1>The residual is what the model leaves behind</h1>
+  <p class="lede">
+    Least squares has a purely geometric heart: the best weights are exactly the ones whose
+    error vector stands <em>perpendicular</em> to everything the model can produce. This page walks
+    the exercise's five parts with two pictures you can move.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>what the model can produce — <span class="mi">X&#8203;v</span>, image(<var>X</var>)</span>
+    <span class="chip"><span class="dot c"></span>the residual <var>r</var> — the error left over</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">Setup · the definition</span>What the residual is</h2>
+  <p>
+    We have <var>n</var> data points and <var>d</var> features: <var>X</var> ∈ ℝ<sup><var>n</var>×<var>d</var></sup>
+    holds one data point per row, <var>Y</var> ∈ ℝ<sup><var>n</var></sup> holds the true values, and a weight
+    vector <var>w</var> ∈ ℝ<sup><var>d</var></sup> makes the predictions <var>Xw</var>. The <strong>residual</strong> is
+  </p>
+  <p class="eq boxed"><span class="c"><var>r</var></span> = <var>Y</var> − <var>Xw</var> ∈ ℝ<sup><var>n</var></sup></p>
+  <p>
+    Read it one coordinate at a time: <span class="c"><var>r</var><sub><var>i</var></sub></span> = <var>Y</var><sub><var>i</var></sub> − ⟨<var>x</var><sub><var>i</var></sub>, <var>w</var>⟩
+    is <em>truth minus prediction</em> at data point <var>i</var>. Positive means the model under-shoots,
+    negative means it over-shoots, zero means a perfect fit there. The least-squares loss is nothing
+    but the squared length of this vector, ‖<var>Xw</var> − <var>Y</var>‖² = ‖<span class="c"><var>r</var></span>‖², so
+    <em>minimizing the loss means making the residual as short as possible</em>. Every candidate
+    <var>w</var> has its own residual; the exercise asks which one is shortest.
+  </p>
+</section>
+
+<figure class="wide" id="fig1-wrap" style="position: relative;">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · one weight, ten points — move <span class="tn"><var>w</var></span> and watch <span class="tn">‖<var>r</var>‖²</span></p>
+    <div class="fig-grid">
+      <div class="fig-cell"><svg id="fit-svg" viewBox="0 0 440 330" role="img" aria-label="Scatter plot of ten data points with a fitted line through the origin and vertical crimson residual segments"></svg></div>
+      <div class="fig-cell"><svg id="loss-svg" viewBox="0 0 440 330" role="img" aria-label="Parabola showing the squared residual norm as a function of the weight, with the current weight marked"></svg></div>
+    </div>
+    <div class="controls">
+      <label for="wslider">weight <var>w</var> = <span id="wval">0.500</span></label>
+      <input type="range" id="wslider" min="0.10" max="1.00" step="0.005" value="0.30" aria-label="weight w">
+      <button class="snap" id="snapbtn" type="button">snap to ŵ</button>
+    </div>
+    <div class="readouts">
+      <span>‖r‖² = <b id="lossval">–</b></span>
+      <span>⟨r, x⟩ = <b id="dotval">–</b></span>
+      <span class="flag" id="orthoflag">⟨r, x⟩ = 0 — residual ⊥ predictions ✓</span>
+    </div>
+  </div>
+  <div class="tooltip" id="tip1"></div>
+  <figcaption>
+    A one-feature model <var>y</var> = <var>wx</var> (so <var>d</var> = 1 and “every direction
+    <var>Xv</var>” is just the feature column <var>x</var>). The crimson segments are the coordinates of
+    <var>r</var>; the right panel plots their total squared length. The parabola bottoms out exactly
+    where ⟨<var>r</var>, <var>x</var>⟩ crosses zero — parts (b)–(d) in one picture.
+  </figcaption>
+</figure>
+
+<details class="data">
+  <summary>Data behind figure 1</summary>
+  <table class="vals" id="datatable">
+    <tr><th><var>i</var></th><th><var>x</var><sub><var>i</var></sub></th><th><var>y</var><sub><var>i</var></sub></th></tr>
+  </table>
+</details>
+
+<section class="prose">
+  <h2><span class="partref">Part (a) · the algebra</span>Perturb the weights, get a parabola</h2>
+  <p>
+    Everything follows from one expansion. Move the weights from <var>w</var> to
+    <var>w</var> + <var>t&#8202;v</var>: the new residual is <var>r</var> − <var>t&#8202;Xv</var>, and its squared length is
+  </p>
+  <p class="eq">‖<span class="c"><var>r</var></span> − <var>t</var><span class="b"><var>Xv</var></span>‖² &#61; ‖<span class="c"><var>r</var></span>‖² − 2<var>t</var>⟨<span class="c"><var>r</var></span>, <span class="b"><var>Xv</var></span>⟩ + <var>t</var>²‖<span class="b"><var>Xv</var></span>‖²</p>
+  <p>
+    As a function of the step size <var>t</var>, the loss along any direction <var>v</var> is an upward
+    parabola — exactly the shape in figure 1. The whole characterization of optimality lives in the
+    middle term: the coefficient ⟨<var>r</var>, <var>Xv</var>⟩ is the parabola's slope at <var>t</var> = 0.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Parts (b) &amp; (c) · the equivalence</span>Minimizer ⟺ residual ⊥ everything the model can produce</h2>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">(b) minimizer ⇒ orthogonal</p>
+      <p>
+        Suppose ⟨<var>r</var>, <var>Xv</var>⟩ ≠ 0 for some direction <var>v</var>. Then the parabola has
+        nonzero slope at <var>t</var> = 0, so stepping to its vertex,
+        <var>t</var> = ⟨<var>r</var>, <var>Xv</var>⟩ / ‖<var>Xv</var>‖², strictly lowers the loss by
+        ⟨<var>r</var>, <var>Xv</var>⟩² / ‖<var>Xv</var>‖². A minimizer admits no such improvement — so at a
+        minimizer every ⟨<var>r</var>, <var>Xv</var>⟩ must vanish.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(c) orthogonal ⇒ minimizer</p>
+      <p>
+        Conversely, if ⟨<var>r</var>, <var>Xv</var>⟩ = 0 for every <var>v</var>, the middle term dies and
+        part (a) with <var>t</var> = 1 becomes Pythagoras:
+        ‖<var>r</var> − <var>Xv</var>‖² = ‖<var>r</var>‖² + ‖<var>Xv</var>‖² ≥ ‖<var>r</var>‖².
+        Every competing weight vector <var>w</var> + <var>v</var> does at least as badly, so <var>w</var> is
+        a minimizer. Figure 2 lets you feel this inequality.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Part (d) · the computation</span>Orthogonality <em>is</em> the normal equations</h2>
+  <p>
+    The abstract condition compresses into one linear system. Since
+    ⟨<var>r</var>, <var>Xv</var>⟩ = (<var>X</var><sup>T</sup><var>r</var>)<sup>T</sup><var>v</var>, asking it to vanish
+    for <em>every</em> <var>v</var> is asking the vector <var>X</var><sup>T</sup><var>r</var> to be zero:
+  </p>
+  <p class="eq boxed"><var>X</var><sup>T</sup>(<var>Y</var> − <var>Xw</var>) = 0 &nbsp;&nbsp;⟺&nbsp;&nbsp; <var>X</var><sup>T</sup><var>X&#8202;w</var> = <var>X</var><sup>T</sup><var>Y</var></p>
+  <p>
+    These are the <strong>normal equations</strong> — “normal” meaning <em>perpendicular</em>, not
+    <em>ordinary</em>. In figure 1 this is the readout ⟨<var>r</var>, <var>x</var>⟩ hitting zero: with
+    <var>d</var> = 1 the system is a single equation, and solving it gives the snap-to
+    ŵ = ⟨<var>x</var>, <var>y</var>⟩ / ‖<var>x</var>‖².
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Part (e) · the picture</span>Prediction as a shadow, residual as the plumb line</h2>
+  <p>
+    The vectors <span class="b"><var>Xv</var></span> for all <var>v</var> ∈ ℝ<sup><var>d</var></sup> form a
+    subspace of ℝ<sup><var>n</var></sup>: image(<var>X</var>), everything the model could possibly predict.
+    Orthogonality to each <var>Xv</var> says <span class="c"><var>r</var></span> ∈ image(<var>X</var>)<sup>⊥</sup>.
+    So at the optimum the data splits into two perpendicular pieces:
+  </p>
+  <p class="eq"><var>Y</var> &#61; <span class="b"><var>X&#8202;ŵ</var></span> + <span class="c"><var>r</var></span>, &nbsp;&nbsp; <span class="b"><var>X&#8202;ŵ</var></span> ∈ image(<var>X</var>), &nbsp; <span class="c"><var>r</var></span> ⊥ image(<var>X</var>)</p>
+  <p>
+    That is the orthogonal decomposition of <var>Y</var>: the prediction
+    <span class="b"><var>Xŵ</var></span> is the <em>orthogonal projection</em> of <var>Y</var> onto
+    image(<var>X</var>) — its shadow on the plane of everything expressible — and the residual is the
+    plumb line from <var>Y</var> down to that shadow. Perpendicular precisely because that is the
+    shortest connection.
+  </p>
+</section>
+
+<figure class="wide" id="fig2-wrap">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · drag the point <span class="tn"><var>p</var></span> across <span class="tn">image(<var>X</var>)</span> — no point beats the shadow</p>
+    <svg id="proj-svg" viewBox="0 0 760 430" role="img" aria-label="A plane representing the image of X, with Y floating above it, its projection X w-hat on the plane, the crimson residual dropping perpendicularly, and a draggable competing point p on the plane"></svg>
+    <div class="readouts">
+      <span>‖Y − p‖² = ‖r‖² + ‖Xv‖² = <b>2.25 + <span id="xvval">0.00</span> = <span id="hypval">2.25</span></b></span>
+      <span class="flag on" id="pythflag">≥ ‖r‖² = 2.25, with equality only at p = Xŵ</span>
+    </div>
+  </div>
+  <figcaption>
+    Every candidate prediction is a point <var>p</var> = <var>Xŵ</var> + <var>Xv</var> on the plane. Its
+    error ‖<var>Y</var> − <var>p</var>‖ is the hypotenuse of a right triangle whose legs are the residual
+    and <var>Xv</var> — and a hypotenuse is never shorter than a leg. Drag <var>p</var> anywhere: the
+    error only grows. That is part (c) made physical.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <div class="takeaway">
+    <p>
+      <strong>The one-line summary.</strong> The residual <var>r</var> = <var>Y</var> − <var>Xw</var> is
+      the part of the data the model fails to explain — and <var>w</var> is optimal exactly when that
+      unexplained part is orthogonal to everything the model <em>can</em> explain. Calculus
+      (∇‖<var>Xw</var> − <var>Y</var>‖² = 0), algebra (<var>X</var><sup>T</sup><var>Xw</var> = <var>X</var><sup>T</sup><var>Y</var>),
+      and geometry (<var>Xŵ</var> = proj<sub>image(<var>X</var>)</sub><var>Y</var>) are three phrasings of
+      this single fact.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var css = function (name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  };
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+
+  /* ---------- Figure 1 ---------- */
+  var xs = [0.8, 1.6, 2.4, 3.3, 4.1, 5.0, 5.9, 6.8, 7.7, 8.6];
+  var ys = [0.81, 0.63, 1.84, 1.63, 2.80, 2.45, 3.80, 3.59, 4.87, 4.69];
+  var n = xs.length;
+  var sxx = 0, sxy = 0;
+  for (var i = 0; i < n; i++) { sxx += xs[i] * xs[i]; sxy += xs[i] * ys[i]; }
+  var wHat = sxy / sxx;
+
+  var tbl = document.getElementById("datatable");
+  for (i = 0; i < n; i++) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + (i + 1) + "</td><td>" + xs[i].toFixed(1) + "</td><td>" + ys[i].toFixed(2) + "</td>";
+    tbl.appendChild(tr);
+  }
+
+  function loss(w) {
+    var s = 0;
+    for (var i = 0; i < n; i++) { var r = ys[i] - w * xs[i]; s += r * r; }
+    return s;
+  }
+  function rdotx(w) {
+    var s = 0;
+    for (var i = 0; i < n; i++) s += xs[i] * (ys[i] - w * xs[i]);
+    return s;
+  }
+
+  // scatter panel: data range x 0..10, y 0..6
+  var M = { l: 46, r: 14, t: 16, b: 40 }, W = 440, H = 330;
+  var pw = W - M.l - M.r, ph = H - M.t - M.b;
+  function sx(x) { return M.l + (x / 10) * pw; }
+  function sy(y) { return M.t + (1 - y / 6) * ph; }
+
+  var fit = document.getElementById("fit-svg");
+  for (var gx = 0; gx <= 10; gx += 2) el(fit, "line", { x1: sx(gx), y1: M.t, x2: sx(gx), y2: H - M.b, stroke: "var(--grid)", "stroke-width": 1 });
+  for (var gy = 0; gy <= 6; gy += 2) el(fit, "line", { x1: M.l, y1: sy(gy), x2: W - M.r, y2: sy(gy), stroke: "var(--grid)", "stroke-width": 1 });
+  el(fit, "line", { x1: M.l, y1: H - M.b, x2: W - M.r, y2: H - M.b, stroke: "var(--muted)", "stroke-width": 1 });
+  el(fit, "line", { x1: M.l, y1: M.t, x2: M.l, y2: H - M.b, stroke: "var(--muted)", "stroke-width": 1 });
+  for (gx = 0; gx <= 10; gx += 2) { var t1 = el(fit, "text", { x: sx(gx), y: H - M.b + 18, "text-anchor": "middle", "class": "axis-label" }); t1.textContent = gx; }
+  for (gy = 0; gy <= 6; gy += 2) { var t2 = el(fit, "text", { x: M.l - 8, y: sy(gy) + 4, "text-anchor": "end", "class": "axis-label" }); t2.textContent = gy; }
+  var xl = el(fit, "text", { x: W - M.r, y: H - 6, "text-anchor": "end", "class": "axis-label" }); xl.textContent = "feature x";
+  var yl = el(fit, "text", { x: M.l - 32, y: M.t - 4, "class": "axis-label" }); yl.textContent = "y";
+
+  var resGroup = el(fit, "g", {});
+  var fitLine = el(fit, "line", { stroke: "var(--blue)", "stroke-width": 2, "stroke-linecap": "round" });
+  var dotGroup = el(fit, "g", {});
+  var resSegs = [], dots = [];
+  for (i = 0; i < n; i++) {
+    resSegs.push(el(resGroup, "line", { stroke: "var(--crimson)", "stroke-width": 2, "stroke-linecap": "round" }));
+    dots.push(el(dotGroup, "circle", { r: 4.5, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 2, "data-i": i, style: "cursor: default;" }));
+  }
+  var lineLabel = el(fit, "text", { "class": "svg-math", fill: "var(--blue)" }); lineLabel.textContent = "y = wx";
+
+  // loss panel: w range matches slider
+  var wMin = 0.10, wMax = 1.00;
+  var lossMax = Math.max(loss(wMin), loss(wMax)) * 1.05;
+  function lx(w) { return M.l + ((w - wMin) / (wMax - wMin)) * pw; }
+  function ly(v) { return M.t + (1 - v / lossMax) * ph; }
+
+  var lsvg = document.getElementById("loss-svg");
+  for (gy = 0; gy <= lossMax; gy += 20) el(lsvg, "line", { x1: M.l, y1: ly(gy), x2: W - M.r, y2: ly(gy), stroke: "var(--grid)", "stroke-width": 1 });
+  el(lsvg, "line", { x1: M.l, y1: H - M.b, x2: W - M.r, y2: H - M.b, stroke: "var(--muted)", "stroke-width": 1 });
+  el(lsvg, "line", { x1: M.l, y1: M.t, x2: M.l, y2: H - M.b, stroke: "var(--muted)", "stroke-width": 1 });
+  var d = "";
+  for (i = 0; i <= 120; i++) {
+    var wv = wMin + (i / 120) * (wMax - wMin);
+    d += (i ? "L" : "M") + lx(wv).toFixed(1) + "," + ly(loss(wv)).toFixed(1);
+  }
+  el(lsvg, "path", { d: d, fill: "none", stroke: "var(--ink-2)", "stroke-width": 2 });
+  el(lsvg, "line", { x1: lx(wHat), y1: M.t + 6, x2: lx(wHat), y2: H - M.b, stroke: "var(--blue)", "stroke-width": 1, "stroke-dasharray": "4 4" });
+  var hatLabel = el(lsvg, "text", { x: lx(wHat), y: M.t, "text-anchor": "middle", "class": "svg-math", fill: "var(--blue)" });
+  hatLabel.textContent = "ŵ = " + wHat.toFixed(3);
+  for (gy = 20; gy < lossMax; gy += 20) { var t3 = el(lsvg, "text", { x: M.l - 8, y: ly(gy) + 4, "text-anchor": "end", "class": "axis-label" }); t3.textContent = gy; }
+  [0.2, 0.4, 0.6, 0.8, 1.0].forEach(function (wv) {
+    var t = el(lsvg, "text", { x: lx(wv), y: H - M.b + 18, "text-anchor": "middle", "class": "axis-label" });
+    t.textContent = wv.toFixed(1);
+    el(lsvg, "line", { x1: lx(wv), y1: H - M.b, x2: lx(wv), y2: H - M.b + 5, stroke: "var(--muted)", "stroke-width": 1 });
+  });
+  var xl2 = el(lsvg, "text", { x: W - M.r, y: H - 6, "text-anchor": "end", "class": "axis-label" }); xl2.textContent = "weight w";
+  var yl2 = el(lsvg, "text", { x: M.l - 32, y: M.t - 4, "class": "axis-label" }); yl2.textContent = "‖r‖²";
+  var marker = el(lsvg, "circle", { r: 6, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+
+  var slider = document.getElementById("wslider");
+  var wvalEl = document.getElementById("wval");
+  var lossEl = document.getElementById("lossval");
+  var dotEl = document.getElementById("dotval");
+  var flag = document.getElementById("orthoflag");
+  var curW = parseFloat(slider.value);
+
+  function render() {
+    var w = curW;
+    wvalEl.textContent = w.toFixed(3);
+    var xEnd = Math.min(10, 6 / w);
+    fitLine.setAttribute("x1", sx(0)); fitLine.setAttribute("y1", sy(0));
+    fitLine.setAttribute("x2", sx(xEnd)); fitLine.setAttribute("y2", sy(w * xEnd));
+    var labX = Math.min(8.6, xEnd) ;
+    lineLabel.setAttribute("x", sx(labX) - 44);
+    lineLabel.setAttribute("y", sy(w * labX) + (w * labX >= 5.6 ? 24 : -10));
+    for (var i = 0; i < n; i++) {
+      dots[i].setAttribute("cx", sx(xs[i])); dots[i].setAttribute("cy", sy(ys[i]));
+      resSegs[i].setAttribute("x1", sx(xs[i])); resSegs[i].setAttribute("y1", sy(ys[i]));
+      resSegs[i].setAttribute("x2", sx(xs[i])); resSegs[i].setAttribute("y2", sy(Math.max(0, Math.min(6, w * xs[i]))));
+    }
+    lossEl.textContent = loss(w).toFixed(2);
+    var dp = rdotx(w);
+    dotEl.textContent = (dp >= 0 ? "+" : "") + dp.toFixed(2);
+    flag.classList.toggle("on", Math.abs(dp) < 0.5);
+    marker.setAttribute("cx", lx(w)); marker.setAttribute("cy", ly(loss(w)));
+  }
+  slider.addEventListener("input", function () { curW = parseFloat(slider.value); render(); });
+  document.getElementById("snapbtn").addEventListener("click", function () {
+    curW = wHat; slider.value = wHat; render();
+  });
+
+  var tip = document.getElementById("tip1");
+  var wrap1 = document.getElementById("fig1-wrap");
+  dots.forEach(function (dot) {
+    dot.addEventListener("pointerenter", function () {
+      var i = +dot.getAttribute("data-i");
+      var r = ys[i] - curW * xs[i];
+      tip.textContent = "x=" + xs[i].toFixed(1) + "  y=" + ys[i].toFixed(2) + "  r=" + (r >= 0 ? "+" : "") + r.toFixed(2);
+      var db = dot.getBoundingClientRect(), wb = wrap1.getBoundingClientRect();
+      tip.style.left = (db.left + db.width / 2 - wb.left) + "px";
+      tip.style.top = (db.top - wb.top) + "px";
+      tip.classList.add("on");
+    });
+    dot.addEventListener("pointerleave", function () { tip.classList.remove("on"); });
+  });
+  render();
+
+  /* ---------- Figure 2 ---------- */
+  var svg2 = document.getElementById("proj-svg");
+  var C = { x: 385, y: 292 };            // foot of the perpendicular, Xŵ
+  var eu = { x: 52, y: 15 }, ev = { x: -44, y: 24 };  // plane basis on screen
+  var EXT = 3;                            // plane extent in plane units
+  var RLEN = 1.5, RPIX = 150;             // residual: 1.5 units tall, 150px on screen
+  function toScreen(u, v) { return { x: C.x + u * eu.x + v * ev.x, y: C.y + u * eu.y + v * ev.y }; }
+  var det = eu.x * ev.y - eu.y * ev.x;
+  function toPlane(dx, dy) {
+    return { u: (dx * ev.y - dy * ev.x) / det, v: (dy * eu.x - dx * eu.y) / det };
+  }
+  var Ypt = { x: C.x, y: C.y - RPIX };
+
+  // plane fill + grid
+  var c1 = toScreen(-EXT, -EXT), c2 = toScreen(EXT, -EXT), c3 = toScreen(EXT, EXT), c4 = toScreen(-EXT, EXT);
+  el(svg2, "polygon", {
+    points: [c1, c2, c3, c4].map(function (p) { return p.x + "," + p.y; }).join(" "),
+    fill: "var(--blue-soft)", stroke: "var(--blue)", "stroke-width": 1, "stroke-opacity": 0.5
+  });
+  for (var g = -EXT; g <= EXT; g++) {
+    var a = toScreen(g, -EXT), b = toScreen(g, EXT);
+    el(svg2, "line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: "var(--blue)", "stroke-opacity": 0.16, "stroke-width": 1 });
+    a = toScreen(-EXT, g); b = toScreen(EXT, g);
+    el(svg2, "line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: "var(--blue)", "stroke-opacity": 0.16, "stroke-width": 1 });
+  }
+  var planeLab = el(svg2, "text", { x: c2.x - 6, y: c2.y + 20, "text-anchor": "end", "class": "svg-math", fill: "var(--blue)" });
+  planeLab.textContent = "image(X) = { Xv : v ∈ ℝᵈ }";
+
+  var hyp = el(svg2, "line", { stroke: "var(--ink-2)", "stroke-width": 2, "stroke-dasharray": "6 5" });
+  var xvLine = el(svg2, "line", { stroke: "var(--blue)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  var resLine = el(svg2, "line", { x1: C.x, y1: C.y, x2: Ypt.x, y2: Ypt.y, stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  var sq = el(svg2, "path", { fill: "none", stroke: "var(--crimson)", "stroke-width": 1.5 });
+
+  el(svg2, "circle", { cx: Ypt.x, cy: Ypt.y, r: 6, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 2 });
+  el(svg2, "circle", { cx: C.x, cy: C.y, r: 6, fill: "var(--blue)", stroke: "var(--card)", "stroke-width": 2 });
+  var pDot = el(svg2, "circle", { r: 9, fill: "var(--card)", stroke: "var(--ink)", "stroke-width": 2.5, style: "cursor: grab;", tabindex: 0 });
+  var pRing = el(svg2, "circle", { r: 15, fill: "none", stroke: "var(--ink)", "stroke-opacity": 0.25, "stroke-width": 1, "stroke-dasharray": "3 3", "pointer-events": "none" });
+
+  var yLab = el(svg2, "text", { x: Ypt.x + 14, y: Ypt.y + 2, "class": "svg-math", fill: "var(--ink)", "font-weight": "bold" }); yLab.textContent = "Y";
+  var rLab = el(svg2, "text", { x: C.x - 10, y: C.y - RPIX / 2 + 4, "text-anchor": "end", "class": "svg-math", fill: "var(--crimson)" }); rLab.textContent = "r  (⊥ plane)";
+  var fLab = el(svg2, "text", { x: C.x - 12, y: C.y + 24, "text-anchor": "end", "class": "svg-math", fill: "var(--blue)" }); fLab.textContent = "Xŵ  — the shadow of Y";
+  var xvLab = el(svg2, "text", { "class": "svg-math", fill: "var(--blue)" }); xvLab.textContent = "Xv";
+  var pLab = el(svg2, "text", { "class": "svg-math", fill: "var(--ink)" }); pLab.textContent = "p = Xŵ + Xv  (drag me)";
+  var hypLab = el(svg2, "text", { "class": "svg-math", fill: "var(--ink-2)" }); hypLab.textContent = "r − Xv";
+
+  var pu = 1.7, pv = 0.9;
+  var xvEl = document.getElementById("xvval");
+  var hypEl = document.getElementById("hypval");
+  var pyth = document.getElementById("pythflag");
+
+  function render2() {
+    var P = toScreen(pu, pv);
+    pDot.setAttribute("cx", P.x); pDot.setAttribute("cy", P.y);
+    pRing.setAttribute("cx", P.x); pRing.setAttribute("cy", P.y);
+    xvLine.setAttribute("x1", C.x); xvLine.setAttribute("y1", C.y);
+    xvLine.setAttribute("x2", P.x); xvLine.setAttribute("y2", P.y);
+    hyp.setAttribute("x1", Ypt.x); hyp.setAttribute("y1", Ypt.y);
+    hyp.setAttribute("x2", P.x); hyp.setAttribute("y2", P.y);
+    xvLab.setAttribute("x", (C.x + P.x) / 2 + 8);
+    xvLab.setAttribute("y", (C.y + P.y) / 2 + 22);
+    pLab.setAttribute("x", P.x + (P.x > C.x ? 20 : -20));
+    pLab.setAttribute("y", P.y + 6);
+    pLab.setAttribute("text-anchor", P.x > C.x ? "start" : "end");
+    hypLab.setAttribute("x", (Ypt.x + P.x) / 2 + (P.x > C.x ? 14 : -14));
+    hypLab.setAttribute("y", (Ypt.y + P.y) / 2);
+    hypLab.setAttribute("text-anchor", P.x > C.x ? "start" : "end");
+
+    // right-angle marker at the foot, between r (up) and the direction toward p
+    var dx = P.x - C.x, dy = P.y - C.y, L = Math.hypot(dx, dy) || 1;
+    var ux = dx / L * 13, uy = dy / L * 13;
+    sq.setAttribute("d", "M" + (C.x + ux) + "," + (C.y + uy) +
+      " L" + (C.x + ux) + "," + (C.y + uy - 13) + " L" + C.x + "," + (C.y - 13));
+
+    var xv2s = pu * pu + pv * pv;
+    xvEl.textContent = xv2s.toFixed(2);
+    hypEl.textContent = (RLEN * RLEN + xv2s).toFixed(2);
+    var atFoot = xv2s < 0.02;
+    pyth.textContent = atFoot
+      ? "equality! p = Xŵ — you found the projection"
+      : "≥ ‖r‖² = 2.25, with equality only at p = Xŵ";
+  }
+
+  var dragging = false;
+  pDot.addEventListener("pointerdown", function (ev2) {
+    dragging = true; pDot.setPointerCapture(ev2.pointerId);
+    pDot.style.cursor = "grabbing";
+  });
+  pDot.addEventListener("pointerup", function () { dragging = false; pDot.style.cursor = "grab"; });
+  svg2.addEventListener("pointermove", function (ev2) {
+    if (!dragging) return;
+    var r = svg2.getBoundingClientRect();
+    var mx = (ev2.clientX - r.left) * (760 / r.width);
+    var my = (ev2.clientY - r.top) * (430 / r.height);
+    var pc = toPlane(mx - C.x, my - C.y);
+    pu = Math.max(-2.7, Math.min(2.7, pc.u));
+    pv = Math.max(-2.7, Math.min(2.7, pc.v));
+    render2();
+  });
+  pDot.addEventListener("keydown", function (ev2) {
+    var step = 0.2, moved = true;
+    if (ev2.key === "ArrowLeft") pu -= step;
+    else if (ev2.key === "ArrowRight") pu += step;
+    else if (ev2.key === "ArrowUp") pv -= step;
+    else if (ev2.key === "ArrowDown") pv += step;
+    else moved = false;
+    if (moved) {
+      pu = Math.max(-2.7, Math.min(2.7, pu));
+      pv = Math.max(-2.7, Math.min(2.7, pv));
+      render2();
+      ev2.preventDefault();
+    }
+  });
+  render2();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · Statistical Machine Learning, Uni Tübingen · built from Exercise 1 (Linear Regression &amp; Orthogonality)</footer>
+</body>
+</html>
