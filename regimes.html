@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📏</text></svg>">
+<title>Regimes &amp; Ridge</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  /* bracketed column stacks for matrices */
+  .stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15em;
+    padding: 0.28em 0.5em;
+    position: relative;
+    vertical-align: middle;
+    line-height: 1.3;
+  }
+  .stack::before, .stack::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 0.32em;
+    border: 1.5px solid currentColor;
+  }
+  .stack::before { left: 0; border-right: none; }
+  .stack::after  { right: 0; border-left: none; }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-cell svg, .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 10rem; min-width: 8rem; accent-color: var(--amber); }
+  button.snap {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--amber);
+    background: var(--amber-soft);
+    border: 1px solid var(--amber);
+    border-radius: 5px;
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+  }
+  button.snap:hover { filter: brightness(1.08); }
+  button.snap:focus-visible, input[type="range"]:focus-visible {
+    outline: 2px solid var(--amber); outline-offset: 2px;
+  }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--blue); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .sum-wrap { overflow-x: auto; margin: 1.4rem 0; }
+  table.sum {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.93rem;
+  }
+  table.sum th, table.sum td {
+    text-align: left;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.sum th {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 400;
+  }
+  table.sum td:first-child { white-space: nowrap; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Exercise 2 · Linear Regression in Different Regimes</p>
+  <h1>One best fit, infinitely many perfect fits, and a dial between</h1>
+  <p class="lede">
+    Whether least squares has a single answer is decided by counting: <var>n</var> data points
+    against <var>d</var> parameters, refereed by the rank of <var>X</var>. This page walks parts
+    (a)–(i): ordinary least squares when data outnumbers parameters, the minimum-norm interpolant
+    when parameters outnumber data, and ridge regression — a dial that buys uniqueness everywhere.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>the solution set — every <var>w</var> that fits</span>
+    <span class="chip"><span class="dot c"></span>the perpendicular step — minimum-norm choice</span>
+    <span class="chip"><span class="dot a"></span>ridge — the λ dial</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">Setup · the regime map</span>Two regimes, one referee: rank</h2>
+  <p>
+    Everything in this exercise hangs on one comparison. If <var>n</var> ≥ <var>d</var> and
+    rank(<var>X</var>) = <var>d</var>, the columns of <var>X</var> are linearly independent but cannot
+    span ℝ<sup><var>n</var></sup> — the data generally cannot be fit exactly, and least squares picks
+    the best compromise. If <var>d</var> &gt; <var>n</var> and rank(<var>X</var>) = <var>n</var>, the
+    columns span <em>all</em> of ℝ<sup><var>n</var></sup> — every data vector can be fit exactly, in
+    infinitely many ways, and the problem becomes choosing among perfect fits.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">The regime map · where each part of the exercise lives</p>
+    <svg id="map-svg" viewBox="0 0 760 380" role="img" aria-label="Map of the n versus d plane: above the diagonal the overdetermined regime with a unique OLS solution, below it the underdetermined regime with infinitely many interpolants, and a ridge border indicating uniqueness for every positive lambda"></svg>
+  </div>
+  <figcaption>
+    Above the diagonal, data outnumbers parameters: parts (a)–(b) give one best fit. Below it,
+    parameters outnumber data: parts (c)–(f) give infinitely many exact fits and single one out.
+    The amber frame is parts (g)–(i): for any λ &gt; 0, ridge has exactly one solution at
+    <em>every</em> point of the map. The two dots mark the worked examples on this page and on the
+    <a href="residual.html">Exercise 1 page</a>.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Parts (a) &amp; (b) · n ≥ d</span>Overdetermined: the norm trick makes OLS unique</h2>
+  <p>
+    Why is <var>X</var><sup>T</sup><var>X</var> invertible? The whole proof is one identity, worth
+    naming because this exercise uses it three times — call it the <strong>norm trick</strong>:
+  </p>
+  <p class="eq"><var>v</var><sup>T</sup><var>X</var><sup>T</sup><var>X&#8202;v</var> &#61; ‖<var>Xv</var>‖²</p>
+  <p>
+    Suppose <var>X</var><sup>T</sup><var>Xv</var> = 0. Multiply by <var>v</var><sup>T</sup>: then
+    ‖<var>Xv</var>‖² = 0, so <var>Xv</var> = 0. But rank(<var>X</var>) = <var>d</var> means the columns
+    are independent, so <var>Xv</var> = 0 forces <var>v</var> = 0. A square matrix whose null space is
+    {0} is invertible. Combined with the normal equations
+    <var>X</var><sup>T</sup><var>Xw</var> = <var>X</var><sup>T</sup><var>Y</var> from
+    <a href="residual.html">Exercise 1</a>, invertibility hands us the solution — and because an
+    invertible system has exactly one solution, it is <em>the</em> minimizer:
+  </p>
+  <p class="eq boxed"><span class="b">ŵ</span> &#61; (<var>X</var><sup>T</sup><var>X</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>Y</var></p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Parts (c) &amp; (d) · d &gt; n</span>Underdetermined: everything fits</h2>
+  <p>
+    Now flip the regime. With rank(<var>X</var>) = <var>n</var>, the <var>d</var> columns of
+    <var>X</var> span all of ℝ<sup><var>n</var></sup>, so <em>every</em> <var>Y</var> is a linear
+    combination of columns: some <var>w</var> satisfies <var>Xw</var> = <var>Y</var> exactly. Zero
+    loss is always achievable — the model can reproduce any data, noise included. The price appears
+    immediately: if <var>Xw</var> = <var>Y</var> and <var>Xv</var> = 0 with <var>v</var> ≠ 0, then
+    <var>w</var> + <var>v</var> also fits perfectly. With <var>d</var> &gt; <var>n</var> the null space
+    of <var>X</var> is nontrivial, so there are infinitely many perfect fits.
+  </p>
+  <p>
+    Part (d) is the norm trick, second appearance, with the roles of rows and columns swapped:
+    if <var>XX</var><sup>T</sup><var>u</var> = 0 then
+    <var>u</var><sup>T</sup><var>XX</var><sup>T</sup><var>u</var> = ‖<var>X</var><sup>T</sup><var>u</var>‖² = 0, so
+    <var>X</var><sup>T</sup><var>u</var> = 0 — meaning <var>u</var> is perpendicular to every column.
+    Columns that span ℝ<sup><var>n</var></sup> leave no room for such a <var>u</var> except 0, so
+    <var>XX</var><sup>T</sup> (an <var>n</var> × <var>n</var> matrix now) is invertible.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Parts (e) &amp; (f) · picking one</span>Among all perfect fits, take the shortest</h2>
+  <p>
+    Invertibility of <var>XX</var><sup>T</sup> lets us write down a distinguished interpolant, the
+    <strong>minimum-norm interpolant</strong>:
+  </p>
+  <p class="eq boxed"><span class="c">ŵ<sub>mn</sub></span> &#61; <var>X</var><sup>T</sup>(<var>XX</var><sup>T</sup>)<sup>−1</sup><var>Y</var></p>
+  <p>
+    Part (e) is a one-line check: <var>X&#8202;ŵ</var><sub>mn</sub> =
+    <var>XX</var><sup>T</sup>(<var>XX</var><sup>T</sup>)<sup>−1</sup><var>Y</var> = <var>Y</var> — the
+    inverse cancels and it really does fit the data exactly. Part (f) says it is the unique
+    <em>shortest</em> one, and the argument is Exercise 1's triangle all over again — same proof,
+    new plane. There the residual stood perpendicular to image(<var>X</var>) in data space; here
+    <var>ŵ</var><sub>mn</sub> stands perpendicular to the null space of <var>X</var> in weight space.
+  </p>
+</section>
+
+<figure class="wide" id="fig1-wrap">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · weight space <span class="tn">(<var>d</var> = 2, <var>n</var> = 1)</span> — drag <span class="tn"><var>w</var></span> along the perfect fits</p>
+    <svg id="mn-svg" viewBox="0 0 760 430" role="img" aria-label="The weight plane with the blue line of interpolating solutions, the crimson minimum-norm interpolant at the foot of the perpendicular from the origin, and a draggable point w on the line"></svg>
+    <div class="readouts">
+      <span>⟨x, w⟩ = <b id="fitval">4.00</b> <span style="color: var(--blue);">— every position fits exactly</span></span>
+      <span>‖w‖² = ‖ŵ<sub>mn</sub>‖² + ‖v‖² = <b>3.20 + <span id="vval">0.00</span> = <span id="normval">3.20</span></b></span>
+    </div>
+    <div class="readouts">
+      <span class="flag on" id="mnflag">≥ ‖ŵ<sub>mn</sub>‖² = 3.20, with equality only at w = ŵ<sub>mn</sub></span>
+    </div>
+  </div>
+  <figcaption>
+    One data point, two weights: <var>x</var> = (2, 1), <var>y</var> = 4. The blue line is the whole
+    solution set {<var>w</var> : ⟨<var>x</var>, <var>w</var>⟩ = 4} — drag <var>w</var> anywhere on it
+    and the fit stays perfect. What changes is ‖<var>w</var>‖: the origin's shadow on the line,
+    ŵ<sub>mn</sub>, is the unique closest point, and every other interpolant is a hypotenuse.
+    Compare <a href="residual.html">Exercise 1's figure 2</a>: the same right triangle, drawn in
+    weight space instead of data space.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <div class="duo">
+    <div class="card">
+      <p class="tag">(f) step 1 · Xv = 0</p>
+      <p>
+        Let <var>w</var> be any interpolant and set <var>v</var> = <var>w</var> − <var>ŵ</var><sub>mn</sub>.
+        Both fit perfectly, so <var>Xv</var> = <var>Xw</var> − <var>X&#8202;ŵ</var><sub>mn</sub> =
+        <var>Y</var> − <var>Y</var> = 0: the difference of two perfect fits lies in the null space of
+        <var>X</var> — the blue direction along the line in figure 1.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(f) step 2 · ŵ<sub>mn</sub> ⊥ v, then Pythagoras</p>
+      <p>
+        <var>ŵ</var><sub>mn</sub><sup>T</sup><var>v</var> =
+        (<var>X</var><sup>T</sup>(<var>XX</var><sup>T</sup>)<sup>−1</sup><var>Y</var>)<sup>T</sup><var>v</var> =
+        <var>Y</var><sup>T</sup>(<var>XX</var><sup>T</sup>)<sup>−1</sup><var>Xv</var> = 0.
+        So ‖<var>w</var>‖² = ‖<var>ŵ</var><sub>mn</sub>‖² + ‖<var>v</var>‖², minimized uniquely at
+        <var>v</var> = 0. The perpendicular wins — again.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Part (g) · ridge as disguised OLS</span>Ridge: change the question, not the answer's form</h2>
+  <p>
+    Minimum-norm is one way to break the tie among perfect fits. Ridge regression instead changes
+    the objective, penalizing large coefficients:
+  </p>
+  <p class="eq">minimize&nbsp;&nbsp; ‖<var>Xw</var> − <var>Y</var>‖² + <span class="a">λ</span>‖<var>w</var>‖², &nbsp;&nbsp;<span class="a">λ</span> &gt; 0</p>
+  <p>
+    The trick of part (g): this is not a new kind of problem at all. Stack <var>d</var> fake
+    observations under the real ones, each demanding that one coordinate of <var>w</var> be 0 with
+    weight √λ:
+  </p>
+  <p class="eq">
+    <var>X̃</var> &#61; <span class="stack"><span><var>X</var></span><span>√<span class="a">λ</span>&#8202;<var>I</var><sub><var>d</var></sub></span></span>,
+    &nbsp;&nbsp; <var>Ỹ</var> &#61; <span class="stack"><span><var>Y</var></span><span>0</span></span>,
+    &nbsp;&nbsp;so&nbsp;&nbsp;
+    ‖<var>X̃w</var> − <var>Ỹ</var>‖² &#61; ‖<var>Xw</var> − <var>Y</var>‖² + <span class="a">λ</span>‖<var>w</var>‖²
+  </p>
+  <p>
+    The augmented residual stacks the true residual on top of √λ&#8202;<var>w</var>, and squared norms
+    add block by block. Ridge <em>is</em> ordinary least squares — on a taller, better-behaved system.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Parts (h) &amp; (i) · uniqueness for free</span>The augmented system is always overdetermined</h2>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">(h) X̃ always has independent columns</p>
+      <p>
+        If <var>X̃v</var> = 0, the bottom block alone reads √λ&#8202;<var>v</var> = 0, and λ &gt; 0
+        forces <var>v</var> = 0 — <em>regardless of the rank of X</em>. So part (a)'s norm trick,
+        third appearance, applies to <var>X̃</var>: the matrix <var>X̃</var><sup>T</sup><var>X̃</var>
+        is invertible and ridge has exactly one minimizer in both regimes.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(i) normal equations, augmented</p>
+      <p>
+        Multiplying out the blocks:
+        <var>X̃</var><sup>T</sup><var>X̃</var> = <var>X</var><sup>T</sup><var>X</var> + λ<var>I</var><sub><var>d</var></sub>
+        and <var>X̃</var><sup>T</sup><var>Ỹ</var> = <var>X</var><sup>T</sup><var>Y</var>. The normal
+        equations for the tall system are therefore
+        (<var>X</var><sup>T</sup><var>X</var> + λ<var>I</var><sub><var>d</var></sub>)<var>w</var> = <var>X</var><sup>T</sup><var>Y</var>.
+      </p>
+    </div>
+  </div>
+  <p class="eq boxed"><span class="a">ŵ<sub>λ</sub></span> &#61; (<var>X</var><sup>T</sup><var>X</var> + <span class="a">λ</span><var>I</var><sub><var>d</var></sub>)<sup>−1</sup><var>X</var><sup>T</sup><var>Y</var></p>
+  <p>
+    Adding λ<var>I</var> is exactly what makes the matrix invertible when
+    <var>X</var><sup>T</sup><var>X</var> alone is not — the penalty term props up the directions the
+    data leaves unconstrained.
+  </p>
+</section>
+
+<figure class="wide" id="fig2-wrap">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · the ridge dial — slide <span class="tn">λ</span> and watch <span class="tn">ŵ<sub>λ</sub></span> trade fit for size</p>
+    <svg id="ridge-svg" viewBox="0 0 760 430" role="img" aria-label="The same weight plane with the solution line faint, the amber ridge solution moving along the segment between the minimum-norm interpolant and the origin as lambda changes, with a crimson misfit segment and an amber penalty circle"></svg>
+    <div class="controls">
+      <label for="lslider">λ = <span id="lval">1.00</span></label>
+      <input type="range" id="lslider" min="0" max="100" step="0.5" value="66" aria-label="regularization strength lambda (log scale)">
+      <button class="snap" id="lzero" type="button">λ → 0</button>
+      <button class="snap" id="lbig" type="button">λ large</button>
+    </div>
+    <div class="readouts">
+      <span>fit ‖Xŵ<sub>λ</sub> − Y‖² = <b id="rfit">–</b></span>
+      <span>penalty λ‖ŵ<sub>λ</sub>‖² = <b id="rpen">–</b></span>
+      <span>total = <b id="rtot">–</b></span>
+      <span class="flag amber" id="rflag"></span>
+    </div>
+  </div>
+  <figcaption>
+    Same toy problem as figure 1. For each λ the unique ridge solution ŵ<sub>λ</sub> sits strictly
+    off the solution line: it accepts a little misfit (crimson) to keep ‖<var>w</var>‖ small (amber
+    circle). As λ → 0 it slides out to the minimum-norm interpolant ŵ<sub>mn</sub>; as λ grows it
+    shrinks toward 0. In this <var>n</var> = 1 example the whole path is the straight segment
+    between them.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Summary</span>Three formulas, one pattern</h2>
+  <div class="sum-wrap">
+    <table class="sum">
+      <tr><th>regime</th><th>condition</th><th>solution</th><th>unique?</th></tr>
+      <tr>
+        <td><span class="b">OLS</span></td>
+        <td><var>n</var> ≥ <var>d</var>, rank <var>d</var></td>
+        <td>ŵ = (<var>X</var><sup>T</sup><var>X</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>Y</var></td>
+        <td>yes — <var>X</var><sup>T</sup><var>X</var> invertible</td>
+      </tr>
+      <tr>
+        <td><span class="c">min-norm</span></td>
+        <td><var>d</var> &gt; <var>n</var>, rank <var>n</var></td>
+        <td>ŵ<sub>mn</sub> = <var>X</var><sup>T</sup>(<var>XX</var><sup>T</sup>)<sup>−1</sup><var>Y</var></td>
+        <td>interpolants: no — shortest one: yes</td>
+      </tr>
+      <tr>
+        <td><span class="a">ridge</span></td>
+        <td>any <var>X</var>, λ &gt; 0</td>
+        <td>ŵ<sub>λ</sub> = (<var>X</var><sup>T</sup><var>X</var> + λ<var>I</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>Y</var></td>
+        <td>yes — always</td>
+      </tr>
+    </table>
+  </div>
+  <div class="takeaway">
+    <p>
+      <strong>The one-line summary.</strong> Uniqueness in least squares is never an accident — it is
+      always some matrix being invertible, and all three invertibility proofs here are the same norm
+      trick <var>v</var><sup>T</sup><var>M&#8202;v</var> = ‖·‖². When the data can't provide
+      invertibility (<var>d</var> &gt; <var>n</var>), you either add a rule
+      (<span class="c">shortest interpolant</span>) or add a penalty (<span class="a">ridge</span>) —
+      and the two meet: ŵ<sub>λ</sub> → ŵ<sub>mn</sub> as λ → 0.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  /* ---------- The regime map ---------- */
+  var map = document.getElementById("map-svg");
+  var mM = { l: 70, r: 30, t: 34, b: 52 }, mW = 760, mH = 380;
+  var mpw = mW - mM.l - mM.r, mph = mH - mM.t - mM.b;
+  var MAXA = 12;
+  function mx(d) { return mM.l + (d / MAXA) * mpw; }
+  function my(n) { return mM.t + (1 - n / MAXA) * mph; }
+
+  // regions
+  el(map, "polygon", { points: mx(0) + "," + my(0) + " " + mx(MAXA) + "," + my(MAXA) + " " + mx(0) + "," + my(MAXA), fill: "var(--blue-soft)" });
+  el(map, "polygon", { points: mx(0) + "," + my(0) + " " + mx(MAXA) + "," + my(MAXA) + " " + mx(MAXA) + "," + my(0), fill: "var(--crimson-soft)" });
+  el(map, "line", { x1: mx(0), y1: my(0), x2: mx(MAXA), y2: my(MAXA), stroke: "var(--muted)", "stroke-width": 1, "stroke-dasharray": "5 4" });
+  txt(map, mx(9.4), my(9.9) - 6, "n = d", { "class": "axis-label", "text-anchor": "middle" });
+  // ridge frame
+  el(map, "rect", { x: mx(0) - 8, y: my(MAXA) - 8, width: mpw + 16, height: mph + 16, fill: "none", stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "7 5", rx: 6 });
+  txt(map, mx(MAXA) + 4, my(MAXA) - 14, "ridge, λ > 0: unique everywhere", { fill: "var(--amber)", "text-anchor": "end" });
+  // region labels
+  txt(map, mx(3.0), my(7.1), "n ≥ d — overdetermined", { fill: "var(--blue)", "text-anchor": "middle", "font-weight": "bold" });
+  txt(map, mx(3.0), my(6.3), "one best fit: ŵ = (XᵀX)⁻¹XᵀY", { fill: "var(--blue)", "text-anchor": "middle", "font-size": "13" });
+  txt(map, mx(8.4), my(2.9), "d > n — underdetermined", { fill: "var(--crimson)", "text-anchor": "middle", "font-weight": "bold" });
+  txt(map, mx(8.4), my(2.1), "∞ perfect fits: pick ŵmn = Xᵀ(XXᵀ)⁻¹Y", { fill: "var(--crimson)", "text-anchor": "middle", "font-size": "13" });
+  // axes
+  el(map, "line", { x1: mx(0), y1: my(0), x2: mx(MAXA), y2: my(0), stroke: "var(--muted)", "stroke-width": 1 });
+  el(map, "line", { x1: mx(0), y1: my(0), x2: mx(0), y2: my(MAXA), stroke: "var(--muted)", "stroke-width": 1 });
+  txt(map, mx(MAXA), my(0) + 34, "d  (parameters)", { "class": "axis-label", "text-anchor": "end" });
+  txt(map, mx(0) - 12, my(MAXA) - 12, "n  (data points)", { "class": "axis-label" });
+  // example markers
+  el(map, "circle", { cx: mx(1), cy: my(10), r: 5, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 2 });
+  txt(map, mx(1) + 10, my(10) + 4, "Exercise 1 page (d = 1, n = 10)", { "font-size": "13", fill: "var(--ink-2)" });
+  el(map, "circle", { cx: mx(2), cy: my(1), r: 5, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 2 });
+  txt(map, mx(2) + 10, my(1) - 8, "figures below (d = 2, n = 1)", { "font-size": "13", fill: "var(--ink-2)" });
+
+  /* ---------- shared weight-plane geometry ---------- */
+  // toy problem: x = (2, 1), y = 4. Solution line 2w1 + w2 = 4.
+  // wmn = (1.6, 0.8), |wmn|^2 = 3.2, |x|^2 = 5.
+  var XV = { x: 2, y: 1 }, YV = 4, XN2 = 5;
+  var WMN = { x: 1.6, y: 0.8 }, WMN2 = 3.2;
+  var U = { x: 1 / Math.sqrt(5), y: -2 / Math.sqrt(5) }; // null-space direction
+
+  var LO = -1.1, HI = 4.3;   // plane range, both axes
+  function planePanel(svg) {
+    var M = { l: 190, t: 18, size: 394 }, unit = M.size / (HI - LO);
+    function px(w1) { return M.l + (w1 - LO) * unit; }
+    function py(w2) { return M.t + (HI - w2) * unit; }
+    for (var g = -1; g <= 4; g++) {
+      el(svg, "line", { x1: px(g), y1: py(LO), x2: px(g), y2: py(HI), stroke: "var(--grid)", "stroke-width": 1 });
+      el(svg, "line", { x1: px(LO), y1: py(g), x2: px(HI), y2: py(g), stroke: "var(--grid)", "stroke-width": 1 });
+    }
+    el(svg, "line", { x1: px(LO), y1: py(0), x2: px(HI), y2: py(0), stroke: "var(--muted)", "stroke-width": 1 });
+    el(svg, "line", { x1: px(0), y1: py(LO), x2: px(0), y2: py(HI), stroke: "var(--muted)", "stroke-width": 1 });
+    txt(svg, px(HI) - 4, py(0) + 16, "w₁", { "class": "axis-label", "text-anchor": "end" });
+    txt(svg, px(0) + 6, py(HI) + 12, "w₂", { "class": "axis-label" });
+    txt(svg, px(0) - 7, py(0) + 16, "0", { "class": "axis-label", "text-anchor": "end" });
+    return { px: px, py: py };
+  }
+  // solution line clipped to the box: w2 = 4 - 2*w1
+  function lineEnds(P) {
+    var w1a = (4 - HI) / 2, w1b = (4 - LO) / 2;
+    return [{ x: P.px(w1a), y: P.py(HI) }, { x: P.px(w1b), y: P.py(LO) }];
+  }
+
+  /* ---------- Figure 1: minimum norm ---------- */
+  var svg1 = document.getElementById("mn-svg");
+  var P1 = planePanel(svg1);
+  var e1 = lineEnds(P1);
+  el(svg1, "line", { x1: e1[0].x, y1: e1[0].y, x2: e1[1].x, y2: e1[1].y, stroke: "var(--blue)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  txt(svg1, e1[0].x - 12, e1[0].y + 16, "{ w : ⟨x, w⟩ = 4 } — all the perfect fits", { fill: "var(--blue)", "text-anchor": "end" });
+
+  var hyp1 = el(svg1, "line", { stroke: "var(--ink-2)", "stroke-width": 2, "stroke-dasharray": "6 5" });
+  var vseg = el(svg1, "line", { stroke: "var(--blue)", "stroke-width": 2.5, "stroke-linecap": "round", "stroke-opacity": 0.55 });
+  el(svg1, "line", { x1: P1.px(0), y1: P1.py(0), x2: P1.px(WMN.x), y2: P1.py(WMN.y), stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  var sq1 = el(svg1, "path", { fill: "none", stroke: "var(--crimson)", "stroke-width": 1.5 });
+
+  el(svg1, "circle", { cx: P1.px(0), cy: P1.py(0), r: 5, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 2 });
+  el(svg1, "circle", { cx: P1.px(WMN.x), cy: P1.py(WMN.y), r: 6, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+  var wDot = el(svg1, "circle", { r: 9, fill: "var(--card)", stroke: "var(--ink)", "stroke-width": 2.5, style: "cursor: grab;", tabindex: 0 });
+  var wRing = el(svg1, "circle", { r: 15, fill: "none", stroke: "var(--ink)", "stroke-opacity": 0.25, "stroke-width": 1, "stroke-dasharray": "3 3", "pointer-events": "none" });
+
+  txt(svg1, P1.px(WMN.x) + 14, P1.py(WMN.y) - 10, "ŵmn — the origin's shadow", { fill: "var(--crimson)" });
+  var wLab = txt(svg1, 0, 0, "w  (drag me)", { fill: "var(--ink)" });
+  var vLab = txt(svg1, 0, 0, "v = w − ŵmn", { fill: "var(--blue)" });
+  var hypLab1 = txt(svg1, 0, 0, "‖w‖", { fill: "var(--ink-2)" });
+
+  var fitEl = document.getElementById("fitval");
+  var vEl = document.getElementById("vval");
+  var normEl = document.getElementById("normval");
+  var mnFlag = document.getElementById("mnflag");
+  var t1 = 1.35;
+
+  function render1() {
+    var w = { x: WMN.x + t1 * U.x, y: WMN.y + t1 * U.y };
+    var sx = P1.px(w.x), sy = P1.py(w.y);
+    wDot.setAttribute("cx", sx); wDot.setAttribute("cy", sy);
+    wRing.setAttribute("cx", sx); wRing.setAttribute("cy", sy);
+    vseg.setAttribute("x1", P1.px(WMN.x)); vseg.setAttribute("y1", P1.py(WMN.y));
+    vseg.setAttribute("x2", sx); vseg.setAttribute("y2", sy);
+    hyp1.setAttribute("x1", P1.px(0)); hyp1.setAttribute("y1", P1.py(0));
+    hyp1.setAttribute("x2", sx); hyp1.setAttribute("y2", sy);
+    wLab.setAttribute("x", sx + (t1 >= 0 ? 16 : -16));
+    wLab.setAttribute("y", sy + (t1 >= 0 ? 22 : -14));
+    wLab.setAttribute("text-anchor", t1 >= 0 ? "start" : "end");
+    var mxx = (P1.px(WMN.x) + sx) / 2, myy = (P1.py(WMN.y) + sy) / 2;
+    vLab.setAttribute("x", mxx + 14); vLab.setAttribute("y", myy + 18);
+    hypLab1.setAttribute("x", (P1.px(0) + sx) / 2 - 12);
+    hypLab1.setAttribute("y", (P1.py(0) + sy) / 2 + 18);
+    hypLab1.setAttribute("text-anchor", "end");
+    // right-angle marker at wmn between the line direction (toward w) and the origin direction
+    var fx = P1.px(WMN.x), fy = P1.py(WMN.y);
+    var dux = (sx - fx), duy = (sy - fy), dl = Math.hypot(dux, duy) || 1;
+    dux = dux / dl * 12; duy = duy / dl * 12;
+    var ox = (P1.px(0) - fx), oy = (P1.py(0) - fy), ol = Math.hypot(ox, oy);
+    ox = ox / ol * 12; oy = oy / ol * 12;
+    sq1.setAttribute("d", "M" + (fx + dux) + "," + (fy + duy) +
+      " L" + (fx + dux + ox) + "," + (fy + duy + oy) + " L" + (fx + ox) + "," + (fy + oy));
+    var v2 = t1 * t1;
+    fitEl.textContent = (XV.x * w.x + XV.y * w.y).toFixed(2);
+    vEl.textContent = v2.toFixed(2);
+    normEl.textContent = (WMN2 + v2).toFixed(2);
+    mnFlag.textContent = v2 < 0.02
+      ? "equality! w = ŵmn — the shortest perfect fit"
+      : "≥ ‖ŵmn‖² = 3.20, with equality only at w = ŵmn";
+  }
+
+  var drag1 = false;
+  function svgPoint(svg, ev, vw, vh) {
+    var r = svg.getBoundingClientRect();
+    return { x: (ev.clientX - r.left) * (vw / r.width), y: (ev.clientY - r.top) * (vh / r.height) };
+  }
+  wDot.addEventListener("pointerdown", function (ev) {
+    drag1 = true; wDot.setPointerCapture(ev.pointerId); wDot.style.cursor = "grabbing";
+  });
+  wDot.addEventListener("pointerup", function () { drag1 = false; wDot.style.cursor = "grab"; });
+  svg1.addEventListener("pointermove", function (ev) {
+    if (!drag1) return;
+    var p = svgPoint(svg1, ev, 760, 430);
+    // pointer in plane coords
+    var w1 = LO + (p.x - 190) / (394 / (HI - LO));
+    var w2 = HI - (p.y - 18) / (394 / (HI - LO));
+    t1 = Math.max(-1.6, Math.min(3.4, (w1 - WMN.x) * U.x + (w2 - WMN.y) * U.y));
+    render1();
+  });
+  wDot.addEventListener("keydown", function (ev) {
+    if (ev.key === "ArrowLeft" || ev.key === "ArrowDown") { t1 = Math.max(-1.6, t1 - 0.15); render1(); ev.preventDefault(); }
+    else if (ev.key === "ArrowRight" || ev.key === "ArrowUp") { t1 = Math.min(3.4, t1 + 0.15); render1(); ev.preventDefault(); }
+  });
+  render1();
+
+  /* ---------- Figure 2: ridge ---------- */
+  var svg2 = document.getElementById("ridge-svg");
+  var P2 = planePanel(svg2);
+  var e2 = lineEnds(P2);
+  el(svg2, "line", { x1: e2[0].x, y1: e2[0].y, x2: e2[1].x, y2: e2[1].y, stroke: "var(--blue)", "stroke-width": 2, "stroke-opacity": 0.45, "stroke-linecap": "round" });
+  txt(svg2, e2[0].x - 12, e2[0].y + 16, "the perfect fits (λ = 0 territory)", { fill: "var(--blue)", "fill-opacity": 0.75, "text-anchor": "end" });
+
+  // ridge path: segment from wmn to origin
+  el(svg2, "line", { x1: P2.px(WMN.x), y1: P2.py(WMN.y), x2: P2.px(0), y2: P2.py(0), stroke: "var(--amber)", "stroke-width": 2, "stroke-opacity": 0.4, "stroke-linecap": "round" });
+  var penCircle = el(svg2, "circle", { cx: P2.px(0), cy: P2.py(0), fill: "none", stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "5 4" });
+  var misfit = el(svg2, "line", { stroke: "var(--crimson)", "stroke-width": 2, "stroke-dasharray": "4 3" });
+  var rDot = el(svg2, "circle", { r: 8, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2.5 });
+  el(svg2, "circle", { cx: P2.px(0), cy: P2.py(0), r: 5, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 2 });
+  el(svg2, "circle", { cx: P2.px(WMN.x), cy: P2.py(WMN.y), r: 5, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+  txt(svg2, P2.px(WMN.x) + 14, P2.py(WMN.y) - 14, "ŵmn  (λ → 0)", { fill: "var(--crimson)" });
+  txt(svg2, P2.px(0) - 10, P2.py(0) - 10, "0  (λ → ∞)", { fill: "var(--ink-2)", "text-anchor": "end" });
+  var rLab = txt(svg2, 0, 0, "ŵλ", { fill: "var(--amber)", "font-weight": "bold" });
+  var misLab = txt(svg2, 0, 0, "misfit", { fill: "var(--crimson)", "font-size": "13" });
+  var penLab = txt(svg2, 0, 0, "‖w‖ = ‖ŵλ‖", { fill: "var(--amber)", "font-size": "13" });
+
+  var slider = document.getElementById("lslider");
+  var lvalEl = document.getElementById("lval");
+  var rfitEl = document.getElementById("rfit");
+  var rpenEl = document.getElementById("rpen");
+  var rtotEl = document.getElementById("rtot");
+  var rflagEl = document.getElementById("rflag");
+
+  function lambdaOf(s) { return Math.pow(10, -2 + 3.5 * (s / 100)); } // 0.01 .. ~31.6
+
+  function render2() {
+    var lam = lambdaOf(parseFloat(slider.value));
+    lvalEl.textContent = lam < 10 ? lam.toFixed(2) : lam.toFixed(1);
+    var shrink = XN2 / (XN2 + lam);            // wλ = shrink · wmn
+    var w = { x: WMN.x * shrink, y: WMN.y * shrink };
+    var sx = P2.px(w.x), sy = P2.py(w.y);
+    rDot.setAttribute("cx", sx); rDot.setAttribute("cy", sy);
+    rLab.setAttribute("x", sx + 14); rLab.setAttribute("y", sy + 20);
+    var wl = Math.hypot(w.x, w.y);
+    penCircle.setAttribute("r", wl * (394 / (HI - LO)));
+    penLab.setAttribute("x", P2.px(-wl * 0.7071) - 8);
+    penLab.setAttribute("y", P2.py(wl * 0.7071) - 8);
+    penLab.setAttribute("text-anchor", "end");
+    // misfit: perpendicular from wλ to the solution line
+    var gap = (YV - (XV.x * w.x + XV.y * w.y)) / XN2; // scalar along x
+    var foot = { x: w.x + gap * XV.x, y: w.y + gap * XV.y };
+    misfit.setAttribute("x1", sx); misfit.setAttribute("y1", sy);
+    misfit.setAttribute("x2", P2.px(foot.x)); misfit.setAttribute("y2", P2.py(foot.y));
+    misLab.setAttribute("x", (sx + P2.px(foot.x)) / 2 + 10);
+    misLab.setAttribute("y", (sy + P2.py(foot.y)) / 2 + 18);
+    var res = YV - (XV.x * w.x + XV.y * w.y);
+    var fit = res * res;
+    var pen = lam * (w.x * w.x + w.y * w.y);
+    rfitEl.textContent = fit.toFixed(2);
+    rpenEl.textContent = pen.toFixed(2);
+    rtotEl.textContent = (fit + pen).toFixed(2);
+    if (lam <= 0.02) { rflagEl.textContent = "ŵλ ≈ ŵmn — ridge recovers the minimum-norm interpolant"; rflagEl.classList.add("on"); }
+    else if (lam >= 25) { rflagEl.textContent = "large λ crushes ŵλ toward 0"; rflagEl.classList.add("on"); }
+    else rflagEl.classList.remove("on");
+  }
+  slider.addEventListener("input", render2);
+  document.getElementById("lzero").addEventListener("click", function () { slider.value = 0; render2(); });
+  document.getElementById("lbig").addEventListener("click", function () { slider.value = 100; render2(); });
+  render2();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · companion page: <a href="residual.html">Exercise 1 — the residual, geometrically</a> · Statistical Machine Learning, Uni Tübingen</footer>
+</body>
+</html>
