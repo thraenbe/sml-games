@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✂️</text></svg>">
+<title>Sparsity &amp; the LASSO</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  @media (max-width: 720px) { .fig-grid { grid-template-columns: 1fr; } }
+  .fig-cell svg, .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 8rem; min-width: 7rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .sum-wrap { overflow-x: auto; margin: 1.4rem 0; }
+  table.sum {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.93rem;
+  }
+  table.sum th, table.sum td {
+    text-align: left;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.sum th {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 400;
+  }
+  table.sum td:first-child { white-space: nowrap; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Exercise 3 · Why ℓ¹ Regularization Produces Sparse Solutions</p>
+  <h1>Ridge shrinks every coefficient. The lasso deletes them.</h1>
+  <p class="lede">
+    Swap the ridge penalty λ‖<var>w</var>‖² for the ℓ¹ penalty λ‖<var>w</var>‖₁ and something
+    qualitatively new happens: coordinates of the solution become <em>exactly</em> zero. This page
+    walks parts (a)–(e) twice over — once through calculus (a kink in the objective creates a dead
+    zone) and once through geometry (a ball with corners catches projections on the axes).
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>no penalty — plain least squares</span>
+    <span class="chip"><span class="dot c"></span>LASSO — the ℓ¹ penalty λ‖<var>w</var>‖₁</span>
+    <span class="chip"><span class="dot a"></span>ridge — the ℓ² penalty ½λ‖<var>w</var>‖²</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">Part (a) · one dimension is enough</span>The kink at zero and the dead zone it creates</h2>
+  <p>
+    Everything about ℓ¹ sparsity is already visible in the simplest possible problem — one weight,
+    one observation:
+  </p>
+  <p class="eq">minimize&nbsp;&nbsp; ½(<var>w</var> − <var>Y</var>)² + <span class="c">λ</span>|<var>w</var>|</p>
+  <p>
+    The penalty |<var>w</var>| is smooth everywhere except at <var>w</var> = 0, where it has a
+    <strong>kink</strong>. Case analysis: for <var>w</var> &gt; 0 the derivative is
+    <var>w</var> − <var>Y</var> + λ, giving the candidate <var>w</var> = <var>Y</var> − λ — but this
+    candidate is only allowed in its own region, so it needs <var>Y</var> &gt; λ. Symmetrically,
+    <var>w</var> = <var>Y</var> + λ needs <var>Y</var> &lt; −λ. And when |<var>Y</var>| ≤ λ,
+    <em>neither candidate is valid</em>: the objective is convex, so the minimum lands on the one
+    point where the derivative doesn't exist — the kink. The result is
+    <strong>soft-thresholding</strong>:
+  </p>
+  <p class="eq boxed"><span class="c">ŵ</span> &#61; sign(<var>Y</var>)&#8202;(|<var>Y</var>| − <span class="c">λ</span>)₊ &nbsp;&nbsp;—&nbsp;&nbsp; exactly 0 whenever |<var>Y</var>| ≤ <span class="c">λ</span></p>
+  <p>
+    A whole interval of inputs, the <strong>dead zone</strong> [−λ, λ], maps to the single output 0.
+    Compare ridge in the same one-dimensional problem (part (c)): minimizing
+    ½(<var>w</var> − <var>Y</var>)² + ½λ<var>w</var>² is smooth everywhere, the derivative always
+    exists, and the solution <var>Y</var>/(1 + λ) is zero only when <var>Y</var> is. Slide the
+    thresholds below and watch the difference.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · soft-thresholding — the objective's kink <span class="tn">(left)</span> and the resulting estimator <span class="tn">(right)</span></p>
+    <div class="fig-grid">
+      <div class="fig-cell"><svg id="obj-svg" viewBox="0 0 440 330" role="img" aria-label="The one-dimensional LASSO objective with its kink at zero and the minimizer marked"></svg></div>
+      <div class="fig-cell"><svg id="thr-svg" viewBox="0 0 440 330" role="img" aria-label="The soft-thresholding function in crimson with its dead zone shaded, the ridge shrinkage line in amber, and the identity line dashed"></svg></div>
+    </div>
+    <div class="controls">
+      <label for="yslider">signal <var>Y</var> = <span id="yval">1.20</span></label>
+      <input type="range" id="yslider" min="-3" max="3" step="0.05" value="1.2" aria-label="signal Y">
+      <label for="lamslider">penalty λ = <span id="lamval">1.00</span></label>
+      <input type="range" id="lamslider" min="0" max="2.5" step="0.05" value="1" aria-label="penalty lambda">
+    </div>
+    <div class="readouts">
+      <span>lasso ŵ = <b id="lassoval">–</b></span>
+      <span>ridge ŵ = <b id="ridgeval">–</b></span>
+      <span class="flag" id="deadflag">|Y| ≤ λ — inside the dead zone: lasso says exactly 0</span>
+    </div>
+  </div>
+  <figcaption>
+    Left: the objective ½(<var>w</var> − <var>Y</var>)² + λ|<var>w</var>|. The kink at
+    <var>w</var> = 0 is visible as a corner in the curve; when |<var>Y</var>| ≤ λ the minimum sits
+    <em>on</em> the corner. Right: the estimator as a function of <var>Y</var>. The crimson
+    soft-threshold has a flat segment of width 2λ — the shaded dead zone — while amber ridge is a
+    straight line through the origin that never touches zero away from it, and the dashed line is
+    the unpenalized answer ŵ = <var>Y</var>.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Part (b) · orthonormal design</span>d dimensions = d copies of part (a)</h2>
+  <p>
+    Why does the one-dimensional story matter? Because under an orthonormal design,
+    <var>X</var><sup>T</sup><var>X</var> = <var>I</var><sub><var>d</var></sub>, the full LASSO problem
+    <em>is</em> <var>d</var> independent copies of it. Completing the square (expand both sides and
+    match terms):
+  </p>
+  <p class="eq">½‖<var>Xw</var> − <var>Y</var>‖² &#61; ½‖<var>w</var> − <var>X</var><sup>T</sup><var>Y</var>‖² + ½‖<var>Y</var>‖² − ½‖<var>X</var><sup>T</sup><var>Y</var>‖²</p>
+  <p>
+    The last two terms don't involve <var>w</var>, so the minimizer doesn't see them. What's left —
+    ½‖<var>w</var> − <var>X</var><sup>T</sup><var>Y</var>‖² + λ‖<var>w</var>‖₁ — is a sum over
+    coordinates with no cross terms:
+  </p>
+  <p class="eq">Σ<sub><var>j</var></sub> [ ½(<var>w</var><sub><var>j</var></sub> − (<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>)² + <span class="c">λ</span>|<var>w</var><sub><var>j</var></sub>| ]</p>
+  <p>
+    Each coordinate solves its own part (a), with (<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>
+    playing the role of the signal <var>Y</var>. Soft-thresholding applies coordinate by coordinate:
+  </p>
+  <p class="eq boxed"><span class="c">ŵ<sub>λ,j</sub></span> &#61; sign((<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>)&#8202;(|(<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>| − <span class="c">λ</span>)₊
+    &nbsp;&nbsp;so&nbsp;&nbsp; <span class="c">ŵ<sub>λ,j</sub></span> &#61; 0 ⟺ |(<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>| ≤ <span class="c">λ</span></p>
+  <p>
+    Every feature whose correlation with the data is at most λ is discarded outright. The lasso is a
+    feature <em>selector</em>, and λ is the audition bar.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Part (c) · the ridge contrast</span>Same setup, no kink, no zeros</h2>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">ridge, coordinate by coordinate</p>
+      <p>
+        The same completing-the-square reduction applies, so ridge also separates. Each coordinate
+        minimizes ½(<var>w</var><sub><var>j</var></sub> − <var>z</var><sub><var>j</var></sub>)² + ½λ<var>w</var><sub><var>j</var></sub>²
+        with <var>z</var><sub><var>j</var></sub> = (<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>.
+        Setting the (everywhere-defined) derivative to zero:
+        <span class="a">ŵ<sup>ridge</sup><sub>λ,j</sub></span> = (<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub> / (1 + λ).
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">zero only by coincidence</p>
+      <p>
+        Since 1 + λ &gt; 0, this is zero <em>iff</em> (<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub> = 0
+        exactly — an event of probability zero for noisy data. Ridge divides every coefficient by
+        the same factor: big ones shrink a lot in absolute terms, small ones a little, but
+        <em>none reach zero</em>. The lasso's dead zone |(<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>| ≤ λ
+        has positive width; ridge's is a single point.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Part (d) · the geometric reason</span>Corners catch projections</h2>
+  <p>
+    The penalized problem has a constrained twin: minimize ½‖<var>w</var> − <var>a</var>‖² subject to
+    a budget ‖<var>w</var>‖₁ ≤ <var>t</var> — that is, <em>project</em> the target <var>a</var> onto
+    the ℓ¹ ball. In two dimensions the ℓ¹ ball is a diamond, and its corners sit exactly on the
+    coordinate axes, where one coordinate is zero. Part (d) makes the sparsity claim precise: if
+    <var>a</var>₁ ≥ <var>a</var>₂ ≥ 0 with <var>a</var>₁ + <var>a</var>₂ &gt; <var>t</var>
+    (the target is outside the budget), then
+  </p>
+  <p class="eq boxed"><var>a</var>₁ − <var>a</var>₂ ≥ <var>t</var> &nbsp;&nbsp;⟹&nbsp;&nbsp; <span class="c">ŵ</span> &#61; (<var>t</var>, 0) — the corner</p>
+  <p>
+    The proof walks three steps. First, since <var>a</var> has nonnegative coordinates, flipping any
+    negative <var>w</var><sub><var>i</var></sub> to |<var>w</var><sub><var>i</var></sub>| only helps, so
+    the search lives in the first quadrant. Second, the minimizer must sit on the boundary
+    <var>w</var>₁ + <var>w</var>₂ = <var>t</var>: from any interior point, stepping toward
+    <var>a</var> stays feasible and gets closer. Third, on the boundary the objective is a
+    one-variable quadratic φ(<var>w</var>₁) with unconstrained minimum
+    <var>w</var>₁<sup>⋆</sup> = (<var>a</var>₁ − <var>a</var>₂ + <var>t</var>)/2 — and when
+    <var>a</var>₁ − <var>a</var>₂ ≥ <var>t</var> this lies at or beyond <var>t</var>, so the
+    constrained minimum clamps to the endpoint: the corner (<var>t</var>, 0). Strict convexity makes
+    it unique. If the target is lopsided enough, the projection <em>lands on the axis</em> — the
+    second feature is deleted, not merely shrunk.
+  </p>
+</section>
+
+<figure class="wide" id="fig2-wrap">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · project onto a diamond vs a circle — drag the target <span class="tn"><var>a</var></span></p>
+    <svg id="ball-svg" viewBox="0 0 760 430" role="img" aria-label="The weight plane with the crimson ell-1 diamond and amber ell-2 circle of equal budget, a draggable target point a, and its projections onto each ball"></svg>
+    <div class="readouts">
+      <span>a = (<b id="a1val">–</b>, <b id="a2val">–</b>) · a₁ − a₂ = <b id="gapval">–</b> vs t = 1.50</span>
+      <span>ℓ¹: ŵ = (<b id="p1x">–</b>, <b id="p1y">–</b>)</span>
+      <span>ℓ²: ŵ = (<b id="p2x">–</b>, <b id="p2y">–</b>)</span>
+    </div>
+    <div class="readouts">
+      <span class="flag" id="cornerflag">corner! one coordinate is exactly 0 — a sparse solution</span>
+    </div>
+  </div>
+  <figcaption>
+    Both balls spend the same budget <var>t</var> = 1.5. The dotted circle around <var>a</var>
+    passes through its ℓ¹ projection — it is the level set of ½‖<var>w</var> − <var>a</var>‖² at the
+    optimum, showing the diamond's corner is genuinely the closest feasible point. Drag <var>a</var>:
+    whenever it is asymmetric enough (|<var>a</var>₁| − |<var>a</var>₂| ≥ <var>t</var>, or the other
+    way around), the crimson projection sits exactly on an axis, while the amber projection onto the
+    round ball almost never does. Corners create zeros; roundness prevents them.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Part (e) · summary</span>Two views of the same phenomenon</h2>
+  <div class="sum-wrap">
+    <table class="sum">
+      <tr><th>penalty</th><th>solution (orthonormal X)</th><th>coordinate is 0 when…</th><th>geometry</th></tr>
+      <tr>
+        <td><span class="c">ℓ¹ (lasso)</span></td>
+        <td>sign((<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>)(|(<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>| − λ)₊</td>
+        <td>|(<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub>| ≤ λ — an interval</td>
+        <td>ball with corners on the axes</td>
+      </tr>
+      <tr>
+        <td><span class="a">ℓ² (ridge)</span></td>
+        <td>(<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub> / (1 + λ)</td>
+        <td>(<var>X</var><sup>T</sup><var>Y</var>)<sub><var>j</var></sub> = 0 — a single point</td>
+        <td>round ball, no corners</td>
+      </tr>
+    </table>
+  </div>
+  <div class="takeaway">
+    <p>
+      <strong>The one-line summary.</strong> Sparsity comes from non-smoothness. The kink of
+      |·| at the origin gives the coordinate-wise objective a flat spot of minimizers at 0 — the
+      dead zone — and the same kink, seen as a constraint set, gives the ℓ¹ ball corners that sit
+      on the coordinate axes and catch projections. Ridge's penalty is smooth and its ball is
+      round, so it rescales coefficients without ever selecting among them. If you want a model
+      that <em>chooses its features</em>, you want the penalty with the corner.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  /* ---------- Figure 1 ---------- */
+  var W = 440, H = 330;
+
+  // left panel: objective L(w), w in [-4,4], L in [0, 10]
+  var oM = { l: 46, r: 14, t: 16, b: 40 };
+  var opw = W - oM.l - oM.r, oph = H - oM.t - oM.b;
+  var WLO = -4, WHI = 4, LMAX = 10;
+  function ox(w) { return oM.l + ((w - WLO) / (WHI - WLO)) * opw; }
+  function oy(v) { return oM.t + (1 - v / LMAX) * oph; }
+
+  var osvg = document.getElementById("obj-svg");
+  for (var g = -4; g <= 4; g += 2) el(osvg, "line", { x1: ox(g), y1: oM.t, x2: ox(g), y2: H - oM.b, stroke: "var(--grid)", "stroke-width": 1 });
+  for (g = 0; g <= LMAX; g += 2) el(osvg, "line", { x1: oM.l, y1: oy(g), x2: W - oM.r, y2: oy(g), stroke: "var(--grid)", "stroke-width": 1 });
+  el(osvg, "line", { x1: oM.l, y1: oy(0), x2: W - oM.r, y2: oy(0), stroke: "var(--muted)", "stroke-width": 1 });
+  el(osvg, "line", { x1: ox(0), y1: oM.t, x2: ox(0), y2: H - oM.b, stroke: "var(--muted)", "stroke-width": 1 });
+  for (g = -4; g <= 4; g += 2) txt(osvg, ox(g), H - oM.b + 18, g, { "class": "axis-label", "text-anchor": "middle" });
+  txt(osvg, W - oM.r, H - 6, "w", { "class": "axis-label", "text-anchor": "end" });
+  txt(osvg, oM.l - 32, oM.t - 4, "½(w−Y)² + λ|w|", { "class": "axis-label" });
+  var objPath = el(osvg, "path", { fill: "none", stroke: "var(--ink-2)", "stroke-width": 2 });
+  var kinkDot = el(osvg, "circle", { r: 4, fill: "none", stroke: "var(--muted)", "stroke-width": 1.5 });
+  var minLine = el(osvg, "line", { stroke: "var(--crimson)", "stroke-width": 1, "stroke-dasharray": "4 4" });
+  var minDot = el(osvg, "circle", { r: 6, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+  var kinkLab = txt(osvg, 0, 0, "the kink", { fill: "var(--muted)", "font-size": "13" });
+
+  // right panel: threshold map, Y in [-4,4], w-hat in [-4,4]
+  var tsvg = document.getElementById("thr-svg");
+  var tM = { l: 46, r: 14, t: 16, b: 40 };
+  var tpw = W - tM.l - tM.r, tph = H - tM.t - tM.b;
+  function tx(Y) { return tM.l + ((Y - WLO) / (WHI - WLO)) * tpw; }
+  function ty(w) { return tM.t + (1 - (w - WLO) / (WHI - WLO)) * tph; }
+
+  var deadRect = el(tsvg, "rect", { y: tM.t, height: tph, fill: "var(--crimson-soft)" });
+  for (g = -4; g <= 4; g += 2) {
+    el(tsvg, "line", { x1: tx(g), y1: tM.t, x2: tx(g), y2: H - tM.b, stroke: "var(--grid)", "stroke-width": 1 });
+    el(tsvg, "line", { x1: tM.l, y1: ty(g), x2: W - tM.r, y2: ty(g), stroke: "var(--grid)", "stroke-width": 1 });
+  }
+  el(tsvg, "line", { x1: tM.l, y1: ty(0), x2: W - tM.r, y2: ty(0), stroke: "var(--muted)", "stroke-width": 1 });
+  el(tsvg, "line", { x1: tx(0), y1: tM.t, x2: tx(0), y2: H - tM.b, stroke: "var(--muted)", "stroke-width": 1 });
+  for (g = -4; g <= 4; g += 2) txt(tsvg, tx(g), H - tM.b + 18, g, { "class": "axis-label", "text-anchor": "middle" });
+  txt(tsvg, W - tM.r, H - 6, "signal Y", { "class": "axis-label", "text-anchor": "end" });
+  txt(tsvg, tM.l - 32, tM.t - 4, "ŵ(Y)", { "class": "axis-label" });
+  el(tsvg, "line", { x1: tx(-4), y1: ty(-4), x2: tx(4), y2: ty(4), stroke: "var(--blue)", "stroke-width": 1.5, "stroke-dasharray": "5 4", "stroke-opacity": 0.7 });
+  var ridgeLine = el(tsvg, "line", { stroke: "var(--amber)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  var lassoPath = el(tsvg, "path", { fill: "none", stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" });
+  var deadLab = txt(tsvg, 0, 0, "dead zone", { fill: "var(--crimson)", "font-size": "13", "text-anchor": "middle" });
+  var idLab = txt(tsvg, tx(3.15) - 4, ty(3.55), "no penalty", { fill: "var(--blue)", "font-size": "13", "text-anchor": "end" });
+  var ridgeCurveLab = txt(tsvg, 0, 0, "ridge", { fill: "var(--amber)", "font-size": "13" });
+  var lassoCurveLab = txt(tsvg, 0, 0, "lasso", { fill: "var(--crimson)", "font-size": "13" });
+  var ridgeDot = el(tsvg, "circle", { r: 5, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+  var lassoDot = el(tsvg, "circle", { r: 6, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+
+  var ySlider = document.getElementById("yslider");
+  var lamSlider = document.getElementById("lamslider");
+  var yEl = document.getElementById("yval");
+  var lamEl = document.getElementById("lamval");
+  var lassoEl = document.getElementById("lassoval");
+  var ridgeEl = document.getElementById("ridgeval");
+  var deadFlag = document.getElementById("deadflag");
+
+  function soft(Y, lam) { return Math.sign(Y) * Math.max(Math.abs(Y) - lam, 0); }
+
+  function render1() {
+    var Y = parseFloat(ySlider.value), lam = parseFloat(lamSlider.value);
+    yEl.textContent = Y.toFixed(2);
+    lamEl.textContent = lam.toFixed(2);
+    // left: objective curve
+    var d = "", started = false;
+    for (var i = 0; i <= 220; i++) {
+      var w = WLO + (i / 220) * (WHI - WLO);
+      var L = 0.5 * (w - Y) * (w - Y) + lam * Math.abs(w);
+      if (L <= LMAX) {
+        d += (started ? "L" : "M") + ox(w).toFixed(1) + "," + oy(L).toFixed(1);
+        started = true;
+      } else started = false;
+    }
+    objPath.setAttribute("d", d);
+    var L0 = 0.5 * Y * Y;
+    if (L0 <= LMAX) {
+      kinkDot.setAttribute("cx", ox(0)); kinkDot.setAttribute("cy", oy(L0));
+      kinkDot.setAttribute("visibility", "visible");
+      kinkLab.setAttribute("x", ox(0) + 10); kinkLab.setAttribute("y", oy(L0) - 10);
+      kinkLab.setAttribute("visibility", "visible");
+    } else { kinkDot.setAttribute("visibility", "hidden"); kinkLab.setAttribute("visibility", "hidden"); }
+    var sw = soft(Y, lam);
+    var Lmin = 0.5 * (sw - Y) * (sw - Y) + lam * Math.abs(sw);
+    minDot.setAttribute("cx", ox(sw)); minDot.setAttribute("cy", oy(Lmin));
+    minLine.setAttribute("x1", ox(sw)); minLine.setAttribute("y1", oy(Lmin));
+    minLine.setAttribute("x2", ox(sw)); minLine.setAttribute("y2", oy(0));
+    // right: dead zone + curves
+    deadRect.setAttribute("x", tx(-lam));
+    deadRect.setAttribute("width", Math.max(0, tx(lam) - tx(-lam)));
+    deadLab.setAttribute("x", tx(0));
+    deadLab.setAttribute("y", ty(-3.4));
+    deadLab.setAttribute("visibility", lam > 0.35 ? "visible" : "hidden");
+    ridgeLine.setAttribute("x1", tx(-4)); ridgeLine.setAttribute("y1", ty(-4 / (1 + lam)));
+    ridgeLine.setAttribute("x2", tx(4)); ridgeLine.setAttribute("y2", ty(4 / (1 + lam)));
+    lassoPath.setAttribute("d",
+      "M" + tx(-4) + "," + ty(-4 + lam) +
+      " L" + tx(-lam) + "," + ty(0) +
+      " L" + tx(lam) + "," + ty(0) +
+      " L" + tx(4) + "," + ty(4 - lam));
+    ridgeCurveLab.setAttribute("x", tx(4) - 40);
+    ridgeCurveLab.setAttribute("y", ty(4 / (1 + lam)) + (lam < 0.3 ? 26 : 16));
+    lassoCurveLab.setAttribute("x", tx(4) - 40);
+    lassoCurveLab.setAttribute("y", ty(4 - lam) - 8);
+    lassoDot.setAttribute("cx", tx(Y)); lassoDot.setAttribute("cy", ty(soft(Y, lam)));
+    ridgeDot.setAttribute("cx", tx(Y)); ridgeDot.setAttribute("cy", ty(Y / (1 + lam)));
+    lassoEl.textContent = soft(Y, lam).toFixed(2);
+    ridgeEl.textContent = (Y / (1 + lam)).toFixed(2);
+    deadFlag.classList.toggle("on", Math.abs(Y) <= lam && lam > 0);
+  }
+  ySlider.addEventListener("input", render1);
+  lamSlider.addEventListener("input", render1);
+  render1();
+
+  /* ---------- Figure 2 ---------- */
+  var svg2 = document.getElementById("ball-svg");
+  var LO = -2.2, HI = 3.4, SZ = 394, XOFF = 190, YOFF = 18;
+  var unit = SZ / (HI - LO);
+  function px(x) { return XOFF + (x - LO) * unit; }
+  function py(y) { return YOFF + (HI - y) * unit; }
+  for (g = -2; g <= 3; g++) {
+    el(svg2, "line", { x1: px(g), y1: py(LO), x2: px(g), y2: py(HI), stroke: "var(--grid)", "stroke-width": 1 });
+    el(svg2, "line", { x1: px(LO), y1: py(g), x2: px(HI), y2: py(g), stroke: "var(--grid)", "stroke-width": 1 });
+  }
+  el(svg2, "line", { x1: px(LO), y1: py(0), x2: px(HI), y2: py(0), stroke: "var(--muted)", "stroke-width": 1 });
+  el(svg2, "line", { x1: px(0), y1: py(LO), x2: px(0), y2: py(HI), stroke: "var(--muted)", "stroke-width": 1 });
+  txt(svg2, px(HI) - 4, py(0) + 16, "w₁", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg2, px(0) + 6, py(HI) + 12, "w₂", { "class": "axis-label" });
+  txt(svg2, px(0) - 7, py(0) + 16, "0", { "class": "axis-label", "text-anchor": "end" });
+
+  var T = 1.5;
+  // ell-2 circle (amber) and ell-1 diamond (crimson), same budget
+  el(svg2, "circle", { cx: px(0), cy: py(0), r: T * unit, fill: "var(--amber-soft)", stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "6 4" });
+  el(svg2, "polygon", {
+    points: px(T) + "," + py(0) + " " + px(0) + "," + py(T) + " " + px(-T) + "," + py(0) + " " + px(0) + "," + py(-T),
+    fill: "var(--crimson-soft)", stroke: "var(--crimson)", "stroke-width": 2
+  });
+  txt(svg2, px(-T) - 10, py(0) - 32, "‖w‖₁ ≤ t", { fill: "var(--crimson)", "text-anchor": "end" });
+  txt(svg2, px(-T * 0.7071) - 10, py(-T * 0.7071) + 16, "‖w‖₂ ≤ t", { fill: "var(--amber)", "text-anchor": "end" });
+
+  var levelCirc = el(svg2, "circle", { fill: "none", stroke: "var(--muted)", "stroke-width": 1, "stroke-dasharray": "3 4" });
+  var seg1 = el(svg2, "line", { stroke: "var(--crimson)", "stroke-width": 1.5, "stroke-dasharray": "5 4" });
+  var seg2 = el(svg2, "line", { stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "5 4" });
+  var p1Dot = el(svg2, "circle", { r: 7, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+  var p2Dot = el(svg2, "circle", { r: 6, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+  var aDot = el(svg2, "circle", { r: 9, fill: "var(--card)", stroke: "var(--ink)", "stroke-width": 2.5, style: "cursor: grab;", tabindex: 0 });
+  var aRing = el(svg2, "circle", { r: 15, fill: "none", stroke: "var(--ink)", "stroke-opacity": 0.25, "stroke-width": 1, "stroke-dasharray": "3 3", "pointer-events": "none" });
+  var aLab = txt(svg2, 0, 0, "a  (drag me)", { fill: "var(--ink)" });
+  var p1Lab = txt(svg2, 0, 0, "ŵℓ¹", { fill: "var(--crimson)", "font-weight": "bold" });
+  var p2Lab = txt(svg2, 0, 0, "ŵℓ²", { fill: "var(--amber)" });
+
+  var a1El = document.getElementById("a1val"), a2El = document.getElementById("a2val");
+  var gapEl = document.getElementById("gapval");
+  var p1xEl = document.getElementById("p1x"), p1yEl = document.getElementById("p1y");
+  var p2xEl = document.getElementById("p2x"), p2yEl = document.getElementById("p2y");
+  var cornerFlag = document.getElementById("cornerflag");
+
+  function projL1(a, t) {
+    var b1 = Math.abs(a.x), b2 = Math.abs(a.y);
+    if (b1 + b2 <= t) return { x: a.x, y: a.y };
+    if (Math.abs(b1 - b2) >= t) {
+      return b1 >= b2
+        ? { x: Math.sign(a.x) * t, y: 0 }
+        : { x: 0, y: Math.sign(a.y) * t };
+    }
+    var th = (b1 + b2 - t) / 2;
+    return { x: Math.sign(a.x) * (b1 - th), y: Math.sign(a.y) * (b2 - th) };
+  }
+  function projL2(a, t) {
+    var n = Math.hypot(a.x, a.y);
+    if (n <= t) return { x: a.x, y: a.y };
+    return { x: a.x * t / n, y: a.y * t / n };
+  }
+
+  var A = { x: 2.6, y: 0.9 };
+  function render2() {
+    var p1 = projL1(A, T), p2 = projL2(A, T);
+    var ax = px(A.x), ay = py(A.y);
+    aDot.setAttribute("cx", ax); aDot.setAttribute("cy", ay);
+    aRing.setAttribute("cx", ax); aRing.setAttribute("cy", ay);
+    aLab.setAttribute("x", ax + (A.x > 1.8 ? -18 : 16));
+    aLab.setAttribute("y", ay - 14);
+    aLab.setAttribute("text-anchor", A.x > 1.8 ? "end" : "start");
+    p1Dot.setAttribute("cx", px(p1.x)); p1Dot.setAttribute("cy", py(p1.y));
+    p2Dot.setAttribute("cx", px(p2.x)); p2Dot.setAttribute("cy", py(p2.y));
+    p1Lab.setAttribute("x", px(p1.x) + 10); p1Lab.setAttribute("y", py(p1.y) + 24);
+    p2Lab.setAttribute("x", px(p2.x) + 10); p2Lab.setAttribute("y", py(p2.y) - 10);
+    seg1.setAttribute("x1", ax); seg1.setAttribute("y1", ay);
+    seg1.setAttribute("x2", px(p1.x)); seg1.setAttribute("y2", py(p1.y));
+    seg2.setAttribute("x1", ax); seg2.setAttribute("y1", ay);
+    seg2.setAttribute("x2", px(p2.x)); seg2.setAttribute("y2", py(p2.y));
+    var rad = Math.hypot(A.x - p1.x, A.y - p1.y) * unit;
+    levelCirc.setAttribute("cx", ax); levelCirc.setAttribute("cy", ay);
+    levelCirc.setAttribute("r", rad);
+    levelCirc.setAttribute("visibility", rad > 2 ? "visible" : "hidden");
+    a1El.textContent = A.x.toFixed(2); a2El.textContent = A.y.toFixed(2);
+    gapEl.textContent = (A.x - A.y).toFixed(2);
+    p1xEl.textContent = p1.x.toFixed(2); p1yEl.textContent = p1.y.toFixed(2);
+    p2xEl.textContent = p2.x.toFixed(2); p2yEl.textContent = p2.y.toFixed(2);
+    var sparse = (Math.abs(p1.x) < 0.005 || Math.abs(p1.y) < 0.005) && (Math.abs(A.x) + Math.abs(A.y) > T);
+    cornerFlag.classList.toggle("on", sparse);
+  }
+  var drag2 = false;
+  aDot.addEventListener("pointerdown", function (ev) {
+    drag2 = true; aDot.setPointerCapture(ev.pointerId); aDot.style.cursor = "grabbing";
+  });
+  aDot.addEventListener("pointerup", function () { drag2 = false; aDot.style.cursor = "grab"; });
+  svg2.addEventListener("pointermove", function (ev) {
+    if (!drag2) return;
+    var r = svg2.getBoundingClientRect();
+    var mx = (ev.clientX - r.left) * (760 / r.width);
+    var my = (ev.clientY - r.top) * (430 / r.height);
+    A.x = Math.max(LO + 0.2, Math.min(HI - 0.2, LO + (mx - XOFF) / unit));
+    A.y = Math.max(LO + 0.2, Math.min(HI - 0.2, HI - (my - YOFF) / unit));
+    render2();
+  });
+  aDot.addEventListener("keydown", function (ev) {
+    var step = 0.15, moved = true;
+    if (ev.key === "ArrowLeft") A.x -= step;
+    else if (ev.key === "ArrowRight") A.x += step;
+    else if (ev.key === "ArrowUp") A.y += step;
+    else if (ev.key === "ArrowDown") A.y -= step;
+    else moved = false;
+    if (moved) {
+      A.x = Math.max(LO + 0.2, Math.min(HI - 0.2, A.x));
+      A.y = Math.max(LO + 0.2, Math.min(HI - 0.2, A.y));
+      render2();
+      ev.preventDefault();
+    }
+  });
+  render2();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · previously: <a href="residual.html">Exercise 1 — the residual</a> · <a href="regimes.html">Exercise 2 — regimes &amp; ridge</a> · Statistical Machine Learning, Uni Tübingen</footer>
+</body>
+</html>

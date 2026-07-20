@@ -12,6 +12,7 @@ A tiny static website with three learning games for the **Statistical Machine Le
 
 - **📐 Residual Geometry** (`residual.html`) — an interactive walk-through of Exercise 1 (Linear Regression & Orthogonality): what the residual is, why a minimizer forces ⟨r, Xv⟩ = 0 for all v, the normal equations, and the projection picture. Two live figures: a weight slider showing the loss parabola and residual segments, and a draggable point on image(X) demonstrating the Pythagorean inequality.
 - **📏 Regimes & Ridge** (`regimes.html`) — Exercise 2 (Linear Regression in Different Regimes): a regime map of n vs d, why XᵀX / XXᵀ are invertible (the "norm trick"), the minimum-norm interpolant as the origin's shadow on the solution set, and ridge regression as OLS on an augmented system. Interactive figures: a draggable w along the line of perfect fits (Pythagoras in weight space), and a λ slider tracing the ridge path from ŵ_mn to 0.
+- **✂️ Sparsity & LASSO** (`lasso.html`) — Exercise 3 (Why ℓ1 Regularization Produces Sparse Solutions): soft-thresholding from the kink of |·|, the dead zone |XᵀY_j| ≤ λ, the ridge contrast (shrinks, never kills), and the ℓ1 ball's corners. Interactive figures: Y and λ sliders driving the 1-d objective and the soft-threshold vs ridge-shrinkage curves, and a draggable target projected onto a diamond vs a circle of equal budget.
 
 ## Deck
 
