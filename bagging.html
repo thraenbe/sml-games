@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
+<title>Bagging &amp; Variance — Why Averaging Works</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .eq .under {
+    display: block;
+    white-space: nowrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 0.4rem;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+  .m { color: var(--muted); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  @media (max-width: 720px) { .fig-grid { grid-template-columns: 1fr; } }
+  .fig-cell svg, .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 8rem; min-width: 7rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Assignment 7 · Exercise 3 · Why Bagging Reduces Variance</p>
+  <h1>Averaging kills variance. Correlation sets the floor.</h1>
+  <p class="lede">
+    A single learner's expected test error splits into three parts — bias², variance, noise — and
+    exactly one of them can be averaged away. Train <var>B</var> independent copies and the
+    variance divides by <var>B</var>; that is bagging's entire trick. But bootstrap copies of one
+    dataset are never independent, and the exercise's final formula says precisely what survives
+    the averaging: ρσ². Random forests exist to attack that ρ.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>single predictors <var>A</var>(<var>S<sub>b</sub></var>)</span>
+    <span class="chip"><span class="dot c"></span>variance — what averaging shrinks</span>
+    <span class="chip"><span class="dot a"></span>bias &amp; the floor — what it can't touch</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">Part (a) · the decomposition</span>Three sources of error, one identity</h2>
+  <p>
+    Fix a test point <var>x</var>. Train a learner <var>A</var> on a random sample <var>S</var>, and
+    let <var>f̄</var>(<var>x</var>) = 𝔼<sub><var>S</var></sub>[<var>A</var>(<var>S</var>)(<var>x</var>)]
+    be the <em>average predictor</em> — what you'd get by training on every possible dataset and
+    averaging — while <var>f</var>*(<var>x</var>) = 𝔼[<var>y</var> | <var>x</var>] is the best
+    possible prediction. Expanding the squared error and watching all three cross terms vanish
+    (each contains a factor with mean zero, and <var>S</var> is independent of the fresh test
+    response) gives the identity:
+  </p>
+  <p class="eq boxed">
+    𝔼<sub><var>S</var>,<var>y</var>|<var>x</var></sub>[(<var>A</var>(<var>S</var>)(<var>x</var>) − <var>y</var>)²]
+    &#61; <span class="a">(<var>f̄</var>(<var>x</var>) − <var>f</var>*(<var>x</var>))²</span>
+    + <span class="c">Var<sub><var>S</var></sub>(<var>A</var>(<var>S</var>)(<var>x</var>))</span>
+    + <span class="m">Var(<var>y</var> | <var>x</var>)</span>
+    <span class="under"><span class="a">bias²</span> · <span class="c">variance</span> · <span class="m">noise</span></span>
+  </p>
+  <p>
+    Each term has its own personality. <span class="a">Bias</span> is a property of the model
+    class: even the average of infinitely many fits misses <var>f</var>* if the class is too rigid.
+    <span class="c">Variance</span> is a property of the estimation: the fit wobbles from sample to
+    sample. <span class="m">Noise</span> belongs to the world and no model touches it. Bagging is a
+    surgical strike on the middle term only.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Part (b) · the ideal bagged predictor</span>Remove the randomness, remove the variance</h2>
+  <p>
+    Define <var>h</var><sub>bag</sub>(<var>x</var>) = 𝔼<sub><var>S</var></sub>[<var>A</var>(<var>S</var>)(<var>x</var>)] = <var>f̄</var>(<var>x</var>) —
+    the average predictor itself. It is a fixed function, not random over <var>S</var>, so when we
+    compute its expected loss the variance term simply isn't there:
+  </p>
+  <p class="eq">𝔼<sub><var>y</var>|<var>x</var></sub>[(<var>h</var><sub>bag</sub>(<var>x</var>) − <var>y</var>)²] &#61; <span class="a">(<var>f̄</var>(<var>x</var>) − <var>f</var>*(<var>x</var>))²</span> + <span class="m">Var(<var>y</var> | <var>x</var>)</span> &nbsp;&nbsp;≤&nbsp;&nbsp; the single-model error</p>
+  <p>
+    The gap between the two sides is exactly <span class="c">Var<sub><var>S</var></sub>(<var>A</var>(<var>S</var>)(<var>x</var>))</span> ≥ 0.
+    Averaging can only help — and what it removes is precisely the variance term, all of it. The
+    catch: <var>h</var><sub>bag</sub> needs the average over <em>all</em> datasets, which nobody
+    has. The rest of the exercise is about approximating it with finitely many.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · averaging <span class="tn"><var>B</var></span> noisy learners — the wobble cancels, the shape stays</p>
+    <div class="fig-grid">
+      <div class="fig-cell"><svg id="ens-svg" viewBox="0 0 440 340" role="img" aria-label="Many thin blue step-function fits to noisy data around a smooth dashed truth curve, with their bold crimson average much closer to the truth"></svg></div>
+      <div class="fig-cell"><svg id="bar-svg" viewBox="0 0 440 340" role="img" aria-label="Stacked error bars for a single model versus the average of B models: noise and squared bias unchanged, the variance segment divided by B"></svg></div>
+    </div>
+    <div class="controls">
+      <label for="bslider">number of models <var>B</var> = <span id="bval">15</span></label>
+      <input type="range" id="bslider" min="1" max="60" step="1" value="15" aria-label="number of averaged models B">
+    </div>
+    <div class="readouts">
+      <span>single-model variance σ̂² ≈ <b id="sig2val">–</b></span>
+      <span>variance of the average ≈ σ̂²/B ≈ <b id="sigBval">–</b></span>
+      <span>bias² ≈ <b id="bias2val">–</b> (unchanged)</span>
+    </div>
+  </div>
+  <figcaption>
+    Left: each thin blue curve is one regressogram (a 12-bin step function) trained on its own
+    fresh sample of 36 noisy points from the dashed truth — low bias, high variance, exactly the
+    learner bagging likes. The bold crimson curve is their average: at <var>B</var> = 1 it is as
+    jumpy as any member; by <var>B</var> = 60 it hugs the truth. Right: the error decomposition.
+    Averaging divides the crimson variance segment by <var>B</var> and leaves amber bias² and gray
+    noise untouched.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Parts (c)–(e) · independent samples</span>Variance ÷ B, bias untouched</h2>
+  <p>
+    Suppose we could draw <var>B</var> genuinely independent training samples and average the
+    resulting predictors: <var>h<sub>B</sub></var>(<var>x</var>) = (1/<var>B</var>) Σ<sub><var>b</var></sub> <var>F<sub>b</sub></var>.
+    Linearity of expectation keeps the mean at <var>f̄</var>(<var>x</var>), and independence makes
+    all covariances vanish, so the variance of the average is (1/<var>B</var>²) · <var>B</var>σ² :
+  </p>
+  <p class="eq boxed">
+    𝔼[<var>h<sub>B</sub></var>(<var>x</var>)] &#61; <var>f̄</var>(<var>x</var>)
+    &nbsp;&nbsp;and&nbsp;&nbsp;
+    Var(<var>h<sub>B</sub></var>(<var>x</var>)) &#61; <span class="c">σ²(<var>x</var>) / <var>B</var></span>
+  </p>
+  <p>
+    Plugging <var>h<sub>B</sub></var> into the part (a) decomposition gives its expected loss as
+    <span class="a">bias²</span> + <span class="c">σ²/<var>B</var></span> + <span class="m">noise</span> —
+    the improvement over one model is exactly (1 − 1/<var>B</var>)&#8202;σ²(<var>x</var>): at
+    <var>B</var> = 25, some 96% of the variance term is gone. And that is <em>all</em> that is
+    gone.
+  </p>
+  <div class="card">
+    <p class="tag">(e) · which base learners should you bag?</p>
+    <p>
+      Averaging divides variance by <var>B</var> but leaves bias² exactly alone — so bagging pays
+      off for <strong>low-bias, high-variance</strong> learners. The textbook example is a deep,
+      unpruned decision tree: flexible enough to be nearly unbiased on any reasonable target, but
+      wildly different from resample to resample — which is precisely the part averaging repairs.
+      Bagging a heavily biased learner just averages many copies of the same mistake.
+    </p>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Parts (f) &amp; (g) · the realistic case</span>Bootstrap copies are correlated — and it shows</h2>
+  <p>
+    In practice there is one dataset <var>D</var>, and the <var>B</var> predictors are trained on
+    bootstrap resamples of it — any two resamples share about 63% of their rows, so the predictors
+    are correlated. Part (f)'s variance identity
+    Var(Σ<var>F<sub>b</sub></var>) = Σ&#8202;Var(<var>F<sub>b</sub></var>) + 2&#8202;Σ<sub><var>b</var>&lt;<var>b'</var></sub> Cov(<var>F<sub>b</sub></var>, <var>F<sub>b'</sub></var>)
+    now has <var>B</var>(<var>B</var> − 1)/2 nonzero covariance pairs, each equal to
+    ρ<sub><var>D</var></sub>(<var>x</var>)&#8202;σ²<sub><var>D</var></sub>(<var>x</var>) by the definition of correlation.
+    Counting terms and dividing by <var>B</var>²:
+  </p>
+  <p class="eq boxed">
+    Var( (1/<var>B</var>) Σ<sub><var>b</var></sub> <var>F<sub>b</sub></var> | <var>D</var> )
+    &#61; ( <span class="a">ρ<sub>D</sub>(<var>x</var>)</span> + <span class="c">(1 − ρ<sub>D</sub>(<var>x</var>)) / <var>B</var></span> ) σ²<sub>D</sub>(<var>x</var>)
+  </p>
+  <p>
+    Read it as a partition of the variance into a <span class="c">defeatable part</span>, which
+    dies like 1/<var>B</var>, and an <span class="a">undefeatable part</span> ρσ², which no amount
+    of averaging touches. Set ρ = 0 and the ideal 1/<var>B</var> law reappears; set ρ = 1 and
+    averaging does nothing at all — you trained the same model <var>B</var> times.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · the variance floor — <span class="tn">(ρ + (1−ρ)/B)&#8202;σ²</span> against <span class="tn"><var>B</var></span></p>
+    <svg id="floor-svg" viewBox="0 0 760 380" role="img" aria-label="Variance of the bagged average against the number of models: the crimson correlated curve flattens onto an amber dashed floor at rho sigma squared, while the blue dashed independent curve continues toward zero"></svg>
+    <div class="controls">
+      <label for="rhoslider">correlation ρ = <span id="rhoval">0.60</span></label>
+      <input type="range" id="rhoslider" min="0" max="0.9" step="0.05" value="0.6" aria-label="correlation between predictors">
+      <label for="b2slider"><var>B</var> = <span id="b2val">25</span></label>
+      <input type="range" id="b2slider" min="1" max="60" step="1" value="25" aria-label="number of models B">
+      <button class="preset" id="preTrees">bagged trees · ρ ≈ 0.6</button>
+      <button class="preset" id="preForest">random forest · ρ ≈ 0.15</button>
+    </div>
+    <div class="readouts">
+      <span>correlated: Var ≈ <b id="corrval">–</b> σ²</span>
+      <span>independent would give: <b id="indval">–</b> σ²</span>
+      <span>floor as B → ∞: ρσ² = <b id="floorval">–</b> σ²</span>
+      <span class="flag amber" id="floorflag">at the floor — more models barely help</span>
+    </div>
+  </div>
+  <figcaption>
+    The blue dashed curve is the fantasy: independent samples, variance σ²/<var>B</var> → 0. The
+    crimson curve is bootstrap reality: it follows the fantasy at first, then flattens onto the
+    amber floor ρσ². Sliding ρ down moves the floor — which is exactly the design lever random
+    forests pull: by considering only a random subset of features at each split, trees stop
+    agreeing on the same strong predictors, ρ drops, and the same <var>B</var> buys much more.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Part (h) · random forests</span>Don't add trees — subtract agreement</h2>
+  <p>
+    As <var>B</var> → ∞ the variance converges to ρ<sub><var>D</var></sub>(<var>x</var>)&#8202;σ²<sub><var>D</var></sub>(<var>x</var>) —
+    a hard floor. Trees grown on bootstrap copies of the same dataset are highly correlated: they
+    tend to pick the same few strong features for their top splits, so they make the same
+    mistakes together, and averaging correlated mistakes doesn't cancel them. Random forests
+    attack ρ directly: at every split, only a random subset of features competes. Different trees
+    are forced to build along different variables, ρ<sub><var>D</var></sub>(<var>x</var>) drops,
+    and the floor sinks. Omit that step and no amount of extra trees pushes the variance below
+    ρσ² — the formula from part (g) says so.
+  </p>
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> Bagging is a pure variance instrument: it cannot fix
+      bias, cannot reduce noise, and against variance it wields two very different terms. The
+      1/<var>B</var> term is free — just train more models. The ρ term is structural — you lower
+      it only by making the models genuinely <em>disagree</em>: different feature subsets,
+      different subsamples, different randomness. That is why a random forest is not "many trees"
+      but many <em>decorrelated</em> trees, and why this exercise and
+      <a href="coefficients.html">Exercises 1–2</a> are one story: regularization and averaging
+      are the two standard ways of paying a little bias (or a little honesty about it) to make
+      variance affordable.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  /* ---------- deterministic RNG ---------- */
+  var seed = 42 >>> 0;
+  function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  function gauss() {
+    var u = Math.max(rnd(), 1e-9), v = rnd();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  /* ---------- Figure 1: ensemble of regressograms ---------- */
+  var f = function (x) { return Math.sin(2 * x) + 0.6 * x; };
+  var SIGMA = 0.6, NPT = 36, BINS = 12, NMODELS = 60, XMAX = 3;
+
+  function trainOne() {
+    var sums = [], cnts = [];
+    for (var k = 0; k < BINS; k++) { sums.push(0); cnts.push(0); }
+    for (var i = 0; i < NPT; i++) {
+      var x = rnd() * XMAX;
+      var y = f(x) + SIGMA * gauss();
+      var k2 = Math.min(BINS - 1, Math.floor(x / XMAX * BINS));
+      sums[k2] += y; cnts[k2]++;
+    }
+    var vals = [];
+    for (k = 0; k < BINS; k++) vals.push(cnts[k] ? sums[k] / cnts[k] : null);
+    for (k = 0; k < BINS; k++) {
+      if (vals[k] === null) {
+        for (var off = 1; off < BINS; off++) {
+          if (k - off >= 0 && vals[k - off] !== null) { vals[k] = vals[k - off]; break; }
+          if (k + off < BINS && vals[k + off] !== null) { vals[k] = vals[k + off]; break; }
+        }
+      }
+    }
+    return vals;
+  }
+  var MODELS = [];
+  for (var mI = 0; mI < NMODELS; mI++) MODELS.push(trainOne());
+
+  // empirical stats across all 60 models
+  var meanAll = [];
+  for (var k = 0; k < BINS; k++) {
+    var s = 0;
+    for (mI = 0; mI < NMODELS; mI++) s += MODELS[mI][k];
+    meanAll.push(s / NMODELS);
+  }
+  var sig2 = 0;
+  for (k = 0; k < BINS; k++) {
+    var vv = 0;
+    for (mI = 0; mI < NMODELS; mI++) vv += Math.pow(MODELS[mI][k] - meanAll[k], 2);
+    sig2 += vv / (NMODELS - 1);
+  }
+  sig2 /= BINS;
+  var bias2 = 0, DENSE = 240;
+  for (var i = 0; i < DENSE; i++) {
+    var xx = (i + 0.5) / DENSE * XMAX;
+    var kk = Math.min(BINS - 1, Math.floor(xx / XMAX * BINS));
+    bias2 += Math.pow(meanAll[kk] - f(xx), 2);
+  }
+  bias2 /= DENSE;
+  var noise = SIGMA * SIGMA;
+
+  var esvg = document.getElementById("ens-svg");
+  var W = 440, H = 340, m = { l: 44, r: 12, t: 14, b: 38 };
+  var pw = W - m.l - m.r, ph = H - m.t - m.b;
+  var YLO = -1.6, YHI2 = 3.0;
+  function ex(x) { return m.l + (x / XMAX) * pw; }
+  function ey(y) { return m.t + (1 - (y - YLO) / (YHI2 - YLO)) * ph; }
+
+  for (var g = 0; g <= 3; g++) el(esvg, "line", { x1: ex(g), y1: m.t, x2: ex(g), y2: H - m.b, stroke: "var(--grid)", "stroke-width": 1 });
+  for (g = -1; g <= 3; g++) el(esvg, "line", { x1: m.l, y1: ey(g), x2: W - m.r, y2: ey(g), stroke: "var(--grid)", "stroke-width": 1 });
+  el(esvg, "line", { x1: m.l, y1: ey(0), x2: W - m.r, y2: ey(0), stroke: "var(--muted)", "stroke-width": 1 });
+  for (g = 0; g <= 3; g++) txt(esvg, ex(g), H - m.b + 17, g, { "class": "axis-label", "text-anchor": "middle" });
+  txt(esvg, W - m.r, H - 6, "x", { "class": "axis-label", "text-anchor": "end" });
+
+  function stepPath(vals) {
+    var d = "";
+    for (var k3 = 0; k3 < BINS; k3++) {
+      var x0 = ex(k3 * XMAX / BINS), x1 = ex((k3 + 1) * XMAX / BINS), yv = ey(vals[k3]);
+      d += (k3 ? "L" + x0.toFixed(1) + "," + yv.toFixed(1) : "M" + x0.toFixed(1) + "," + yv.toFixed(1));
+      d += "L" + x1.toFixed(1) + "," + yv.toFixed(1);
+    }
+    return d;
+  }
+  var modelPaths = MODELS.map(function (vals) {
+    return el(esvg, "path", { d: stepPath(vals), fill: "none", stroke: "var(--blue)", "stroke-width": 1, "stroke-opacity": 0.28 });
+  });
+  var td = "";
+  for (i = 0; i <= 160; i++) {
+    var xt = i / 160 * XMAX;
+    td += (i ? "L" : "M") + ex(xt).toFixed(1) + "," + ey(f(xt)).toFixed(1);
+  }
+  el(esvg, "path", { d: td, fill: "none", stroke: "var(--muted)", "stroke-width": 2, "stroke-dasharray": "7 5" });
+  var avgPath = el(esvg, "path", { fill: "none", stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linejoin": "round" });
+  txt(esvg, ex(0.08), ey(2.78), "truth f* (dashed)", { fill: "var(--muted)", "font-size": "13" });
+  txt(esvg, ex(0.08), ey(2.44), "average of B", { fill: "var(--crimson)", "font-size": "13", "font-weight": "bold" });
+  txt(esvg, ex(0.08), ey(2.10), "single fits", { fill: "var(--blue)", "font-size": "13" });
+
+  /* right cell: stacked decomposition bars */
+  var bsvg = document.getElementById("bar-svg");
+  var bm = { l: 150, t: 30, b: 52 };
+  var bph = H - bm.t - bm.b;
+  var TOT = noise + bias2 + sig2;
+  var YMAXB = TOT * 1.14;
+  function by(v) { return bm.t + (1 - v / YMAXB) * bph; }
+  var colX = [190, 320], colW = 86;
+  var GAP = 2;
+
+  function stack(cx, segs, labelSide) {
+    var acc = 0, rects = [];
+    segs.forEach(function (sg, idx) {
+      var y0 = by(acc), y1 = by(acc + sg.v);
+      var r = el(bsvg, "rect", {
+        x: cx, width: colW,
+        y: y1 + (idx < segs.length - 1 ? 0 : 0),
+        height: Math.max(0.8, y0 - y1 - (idx < segs.length - 1 ? GAP : 0)),
+        fill: sg.fill, rx: 2
+      });
+      rects.push({ rect: r, seg: sg, mid: (y0 + y1) / 2 });
+      acc += sg.v;
+    });
+    return rects;
+  }
+  var col1 = stack(colX[0], [
+    { v: noise, fill: "var(--muted)", name: "noise Var(y|x)" },
+    { v: bias2, fill: "var(--amber)", name: "bias²" },
+    { v: sig2, fill: "var(--crimson)", name: "variance σ̂²" }
+  ]);
+  col1.forEach(function (r) {
+    txt(bsvg, colX[0] - 10, r.mid + 4, r.seg.name, { "class": "axis-label", "text-anchor": "end" });
+  });
+  var col2Segs = [
+    { v: noise, fill: "var(--muted)" },
+    { v: bias2, fill: "var(--amber)" },
+    { v: sig2, fill: "var(--crimson)" }
+  ];
+  var col2 = stack(colX[1], col2Segs);
+  var varLab2 = txt(bsvg, colX[1] + colW + 8, 0, "", { "class": "axis-label", style: "fill: var(--crimson);" });
+  var tot1Lab = txt(bsvg, colX[0] + colW / 2, by(TOT) - 8, "", { "class": "axis-label", "text-anchor": "middle" });
+  var tot2Lab = txt(bsvg, colX[1] + colW / 2, 0, "", { "class": "axis-label", "text-anchor": "middle" });
+  txt(bsvg, colX[0] + colW / 2, H - 30, "one model", { "class": "axis-label", "text-anchor": "middle" });
+  var col2Cap = txt(bsvg, colX[1] + colW / 2, H - 30, "average of B", { "class": "axis-label", "text-anchor": "middle" });
+  txt(bsvg, colX[0] - 132, 16, "error at a test point", { "class": "axis-label" });
+
+  var bSlider = document.getElementById("bslider");
+  var bEl = document.getElementById("bval");
+  var sig2El = document.getElementById("sig2val"), sigBEl = document.getElementById("sigBval"), bias2El = document.getElementById("bias2val");
+
+  function renderEns() {
+    var B = parseInt(bSlider.value, 10);
+    bEl.textContent = B;
+    modelPaths.forEach(function (p, idx) { p.setAttribute("visibility", idx < B ? "visible" : "hidden"); });
+    var avg = [];
+    for (var k4 = 0; k4 < BINS; k4++) {
+      var s2 = 0;
+      for (var b = 0; b < B; b++) s2 += MODELS[b][k4];
+      avg.push(s2 / B);
+    }
+    avgPath.setAttribute("d", stepPath(avg));
+    // right bars
+    var vB = sig2 / B, accTop = noise + bias2 + vB;
+    var y0 = by(noise + bias2), y1 = by(accTop);
+    col2[2].rect.setAttribute("y", y1);
+    col2[2].rect.setAttribute("height", Math.max(0.8, y0 - y1));
+    var labY = Math.min((y0 + y1) / 2 + 4, y0 - 2);
+    varLab2.setAttribute("y", labY);
+    varLab2.textContent = "÷ B";
+    tot1Lab.textContent = "Σ = " + TOT.toFixed(2);
+    tot2Lab.setAttribute("y", by(accTop) - 8);
+    tot2Lab.textContent = "Σ = " + accTop.toFixed(2);
+    col2Cap.textContent = "average of B = " + B;
+    sig2El.textContent = sig2.toFixed(3);
+    sigBEl.textContent = vB.toFixed(3);
+    bias2El.textContent = bias2.toFixed(3);
+  }
+  bSlider.addEventListener("input", renderEns);
+  renderEns();
+
+  /* ---------- Figure 2: the variance floor ---------- */
+  var fsvg = document.getElementById("floor-svg");
+  var FW = 760, FH = 380, fm = { l: 56, r: 150, t: 20, b: 46 };
+  var fpw = FW - fm.l - fm.r, fph = FH - fm.t - fm.b;
+  var BMAX = 60;
+  function fx(B) { return fm.l + ((B - 1) / (BMAX - 1)) * fpw; }
+  function fy(v) { return fm.t + (1 - v / 1.05) * fph; }
+
+  [0.25, 0.5, 0.75, 1].forEach(function (v) {
+    el(fsvg, "line", { x1: fm.l, y1: fy(v), x2: FW - fm.r, y2: fy(v), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(fsvg, fm.l - 8, fy(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  [10, 20, 30, 40, 50, 60].forEach(function (B) {
+    el(fsvg, "line", { x1: fx(B), y1: fm.t, x2: fx(B), y2: FH - fm.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(fsvg, fx(B), FH - fm.b + 18, B, { "class": "axis-label", "text-anchor": "middle" });
+  });
+  el(fsvg, "line", { x1: fm.l, y1: fy(0), x2: FW - fm.r, y2: fy(0), stroke: "var(--muted)", "stroke-width": 1 });
+  el(fsvg, "line", { x1: fm.l, y1: fm.t, x2: fm.l, y2: FH - fm.b, stroke: "var(--muted)", "stroke-width": 1 });
+  txt(fsvg, FW - fm.r, FH - 8, "number of models B", { "class": "axis-label", "text-anchor": "end" });
+  txt(fsvg, fm.l - 40, fm.t - 6, "Var(h_B) in units of σ²", { "class": "axis-label" });
+
+  var indPath = el(fsvg, "path", { fill: "none", stroke: "var(--blue)", "stroke-width": 1.8, "stroke-dasharray": "6 4" });
+  var floorLine = el(fsvg, "line", { stroke: "var(--amber)", "stroke-width": 1.8, "stroke-dasharray": "7 5" });
+  var corrPath = el(fsvg, "path", { fill: "none", stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  var corrDot = el(fsvg, "circle", { r: 6.5, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+  var indDot = el(fsvg, "circle", { r: 5.5, fill: "var(--blue)", stroke: "var(--card)", "stroke-width": 2 });
+  var corrLab = txt(fsvg, 0, 0, "correlated (bootstrap)", { fill: "var(--crimson)", "font-size": "13", "font-weight": "bold" });
+  var indLab = txt(fsvg, 0, 0, "independent: σ²/B", { fill: "var(--blue)", "font-size": "13" });
+  var floorLab = txt(fsvg, 0, 0, "floor ρσ²", { fill: "var(--amber)", "font-size": "13" });
+
+  var rhoS = document.getElementById("rhoslider"), b2S = document.getElementById("b2slider");
+  var rhoEl = document.getElementById("rhoval"), b2El = document.getElementById("b2val");
+  var corrEl = document.getElementById("corrval"), indEl = document.getElementById("indval"), floorEl = document.getElementById("floorval");
+  var floorFlag = document.getElementById("floorflag");
+
+  function vcorr(rho, B) { return rho + (1 - rho) / B; }
+
+  function renderFloor() {
+    var rho = parseFloat(rhoS.value), B = parseInt(b2S.value, 10);
+    rhoEl.textContent = rho.toFixed(2);
+    b2El.textContent = B;
+    var dC = "", dI = "";
+    for (var i2 = 0; i2 <= 200; i2++) {
+      var Bx = 1 + (i2 / 200) * (BMAX - 1);
+      dC += (i2 ? "L" : "M") + fx(Bx).toFixed(1) + "," + fy(vcorr(rho, Bx)).toFixed(1);
+      dI += (i2 ? "L" : "M") + fx(Bx).toFixed(1) + "," + fy(1 / Bx).toFixed(1);
+    }
+    corrPath.setAttribute("d", dC);
+    indPath.setAttribute("d", dI);
+    floorLine.setAttribute("x1", fm.l); floorLine.setAttribute("x2", FW - fm.r);
+    floorLine.setAttribute("y1", fy(rho)); floorLine.setAttribute("y2", fy(rho));
+    floorLine.setAttribute("visibility", rho > 0.02 ? "visible" : "hidden");
+    corrDot.setAttribute("cx", fx(B)); corrDot.setAttribute("cy", fy(vcorr(rho, B)));
+    indDot.setAttribute("cx", fx(B)); indDot.setAttribute("cy", fy(1 / B));
+    corrLab.setAttribute("x", fx(9));
+    corrLab.setAttribute("y", fy(vcorr(rho, 9)) - 12);
+    indLab.setAttribute("x", fx(24));
+    indLab.setAttribute("y", fy(1 / 24) - 12);
+    floorLab.setAttribute("x", FW - fm.r + 10);
+    floorLab.setAttribute("y", fy(rho) + 4);
+    floorLab.setAttribute("visibility", rho > 0.02 ? "visible" : "hidden");
+    corrEl.textContent = vcorr(rho, B).toFixed(3);
+    indEl.textContent = (1 / B).toFixed(3);
+    floorEl.textContent = rho.toFixed(2);
+    floorFlag.classList.toggle("on", rho > 0.02 && (1 - rho) / B < 0.05 * Math.max(rho, 0.1));
+  }
+  rhoS.addEventListener("input", renderFloor);
+  b2S.addEventListener("input", renderFloor);
+  document.getElementById("preTrees").addEventListener("click", function () { rhoS.value = 0.6; renderFloor(); });
+  document.getElementById("preForest").addEventListener("click", function () { rhoS.value = 0.15; renderFloor(); });
+  renderFloor();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · this sheet: <a href="coefficients.html">Exercises 1–2 — reading coefficients</a> · <a href="practice7.html">practice problems</a> · earlier: <a href="residual.html">the residual</a> · <a href="regimes.html">regimes &amp; ridge</a> · <a href="lasso.html">sparsity &amp; LASSO</a></footer>
+</body>
+</html>

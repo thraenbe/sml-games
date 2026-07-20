@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>">
+<title>Assignment 7 Practice — One Big Picture, Eleven Small Problems</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .task {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem 0.9rem;
+    margin: 1.1rem 0;
+  }
+  .task .tag {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.55rem;
+  }
+  .task .tag .no { color: var(--crimson); }
+  .task .q { margin: 0 0 0.4rem; }
+  .task .eq {
+    font-size: 1.02rem; text-align: center; padding: 0.5rem 0.6rem; margin: 0.6rem 0;
+    overflow-x: auto; white-space: nowrap;
+  }
+  details.sol {
+    border-top: 1px dashed var(--line);
+    margin-top: 0.85rem;
+    padding: 0.6rem 0 0.25rem;
+  }
+  details.sol summary {
+    cursor: pointer;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue);
+    user-select: none;
+  }
+  details.sol summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  details.sol[open] summary { color: var(--muted); }
+  .sol-body { padding-top: 0.55rem; font-size: 0.96rem; color: var(--ink); }
+  .sol-body p { margin: 0 0 0.7rem; }
+  .sol-body p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Assignment 7 · Practice · Shorter Tasks, With Solutions</p>
+  <h1>One big picture, eleven small problems.</h1>
+  <p class="lede">
+    Assignment 7 is really one story told twice. A fitted model is a <em>noisy estimate</em> — with
+    correlated features and d ≈ n, catastrophically noisy — and the sheet offers the two standard
+    medicines: <strong>shrink</strong> the estimate toward zero (regularization, Exercises 1–2) or
+    <strong>average</strong> many retrainings of it (bagging, Exercise 3). Both spend a little bias
+    to buy a lot of variance. The problems below are smaller than the sheet's, but each one carries
+    a piece of that picture; try it before opening the solution.
+  </p>
+</header>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">The map of the sheet — one disease, two medicines</p>
+    <svg id="map-svg" viewBox="0 0 760 258" role="img" aria-label="A diagram: one noisy estimate at the top, with two arrows down to the two remedies — shrinking via regularization and averaging via bagging"></svg>
+  </div>
+  <figcaption>
+    Both branches end at the same ledger: bias² + variance (+ noise nobody can touch). Regularization
+    accepts a shrinkage bias so the estimate stops wobbling; bagging keeps the bias and divides the
+    wobble by <var>B</var> — down to the correlation floor ρσ².
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Warm-ups · Exercises 1–2</span>A. Reading coefficients</h2>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 1</span><span>weighted least squares</span><span>compute</span></p>
+    <p class="q">
+      One feature, no bias, two data points (<var>x</var>, <var>y</var>) = (1, 2) and (2, 3) with
+      weights <var>r</var> = (1, 4). Minimize Σ<sub><var>i</var></sub> <var>r<sub>i</sub></var>(<var>y<sub>i</sub></var> − <var>wx<sub>i</sub></var>)².
+      What is <var>w</var><sup>⋆</sup>? How does it compare to the unweighted fit?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Setting the derivative to zero gives <var>w</var><sup>⋆</sup> = Σ<var>r<sub>i</sub>x<sub>i</sub>y<sub>i</sub></var> / Σ<var>r<sub>i</sub>x<sub>i</sub></var>²
+          = (1·1·2 + 4·2·3) / (1·1² + 4·2²) = 26/17 ≈ <strong>1.53</strong>.
+        </p>
+        <p>
+          Unweighted: (2 + 6)/(1 + 4) = 1.60. The second point alone would like slope
+          <var>y</var>/<var>x</var> = 1.5, and its weight 4 — four copies of itself — pulls the
+          answer toward 1.5.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 2</span><span>weighted least squares</span><span>derive</span></p>
+    <p class="q">
+      Show in one line that weighted least squares on (<var>X<sub>i</sub></var>, <var>Y<sub>i</sub></var>)
+      with weights <var>r<sub>i</sub></var> is ordinary least squares on rescaled data. What is the
+      closed-form solution?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          <var>r<sub>i</sub></var>(<var>Y<sub>i</sub></var> − ⟨<var>X<sub>i</sub></var>, <var>w</var>⟩)²
+          = (√<var>r<sub>i</sub></var><var>Y<sub>i</sub></var> − ⟨√<var>r<sub>i</sub></var><var>X<sub>i</sub></var>, <var>w</var>⟩)² —
+          so set <var>X̃<sub>i</sub></var> = √<var>r<sub>i</sub></var><var>X<sub>i</sub></var>,
+          <var>Ỹ<sub>i</sub></var> = √<var>r<sub>i</sub></var><var>Y<sub>i</sub></var> and run OLS.
+        </p>
+        <p>
+          In matrix form, with <var>R</var> = diag(<var>r</var>):
+          <var>w</var><sup>⋆</sup> = (<var>X</var><sup>T</sup><var>RX</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>RY</var>,
+          unique because all <var>r<sub>i</sub></var> &gt; 0 keep <var>X</var><sup>T</sup><var>RX</var>
+          positive definite when <var>X</var> has full column rank.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 3</span><span>partial vs marginal</span><span>compute</span></p>
+    <p class="q">
+      Standardized features with corr(<var>X</var>₁, <var>X</var>₂) = 0.5,
+      Cov(<var>X</var>₁, <var>Y</var>) = 0.5, Cov(<var>X</var>₂, <var>Y</var>) = 1. What slope does a
+      scatter plot of <var>Y</var> against <var>X</var>₁ suggest? What coefficient does the
+      two-feature regression report for <var>X</var>₁?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Marginal: Cov(<var>X</var>₁, <var>Y</var>)/Var(<var>X</var>₁) = <strong class="b">0.5</strong>.
+          Partial: <var>w</var>₁<sup>⋆</sup> = (<var>c</var>₁ − ρ<var>c</var>₂)/(1 − ρ²)
+          = (0.5 − 0.5·1)/(1 − 0.25) = <strong class="c">0</strong>.
+        </p>
+        <p>
+          Every bit of <var>X</var>₁'s association with <var>Y</var> is already explained by
+          <var>X</var>₂ — after controlling for <var>X</var>₂, nothing is left. Same data, two
+          honest answers to two different questions.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 4</span><span>partial vs marginal</span><span>true / false</span></p>
+    <p class="q">
+      True or false? (i) If <var>w<sub>j</sub></var><sup>⋆</sup> = 0 then Cov(<var>X<sub>j</sub></var>, <var>Y</var>) = 0.
+      (ii) If Cov(<var>X<sub>j</sub></var>, <var>Y</var>) = 0 then <var>w<sub>j</sub></var><sup>⋆</sup> = 0.
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          <strong>Both false.</strong> (i) Take <var>Y</var> = <var>X</var>₂ with
+          corr(<var>X</var>₁, <var>X</var>₂) = ρ ≠ 0: the regression gives
+          <var>w</var><sup>⋆</sup> = (0, 1), yet Cov(<var>X</var>₁, <var>Y</var>) = ρ ≠ 0.
+          (ii) Take <var>Y</var> = <var>X</var>₂ − ρ<var>X</var>₁: then
+          Cov(<var>X</var>₁, <var>Y</var>) = ρ − ρ = 0, yet <var>w</var>₁<sup>⋆</sup> = −ρ ≠ 0.
+        </p>
+        <p>
+          The moral is exactly № 3: marginal covariance ignores the other features; the coefficient
+          accounts for them.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 5</span><span>interpretation</span><span>explain</span></p>
+    <p class="q">
+      A regression on observational data reports a coefficient of −0.14 on
+      <span style="font-family: ui-monospace, Menlo, monospace; font-size: 0.9em;">PctUnemployed</span>
+      for predicting crime. A politician concludes: “lowering unemployment by one point lowers crime
+      by 0.14.” Two reasons this is unwarranted?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          <strong>1 — not causal.</strong> The coefficient describes the conditional mean in the
+          observed joint distribution; the claim is about an intervention. Without “no unobserved
+          confounders, no reverse causation, true linearity” the two are different objects.
+        </p>
+        <p>
+          <strong>2 — not even stable.</strong> With d ≈ n and many features correlated with
+          unemployment, the estimate has enormous variance — on the sheet's data its sign even
+          disagrees with the marginal correlation (+0.53). A fresh sample could flip it.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 6</span><span>d ≈ n</span><span>explain</span></p>
+    <p class="q">
+      Your OLS fit with <var>d</var> = 99 features on <var>n</var> = 100 points reports in-sample
+      R² ≈ 1.00. Great news?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          The opposite. A nearly square design matrix can fit almost any labels — including pure
+          noise — so R² ≈ 1 signals near-interpolation, not understanding. Individual coefficients
+          are barely identified: correlated features can trade loadings with almost no effect on the
+          fit, so each ŵ<sub>j</sub> wobbles wildly across samples. High in-sample fit and
+          meaningless coefficients are entirely compatible.
+        </p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Warm-ups · Exercises 2(f)–3</span>B. Variance, and the two medicines</h2>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 7</span><span>bias–variance</span><span>compute</span></p>
+    <p class="q">
+      An estimator of <var>w<sub>j</sub></var><sup>⋆</sup> = 1 has mean 0.27 and variance 0.12 (the
+      sheet's lasso near λ* ≈ 0.03). Its expected squared error? Compare with the near-unregularized
+      version: mean 0.17, variance 0.70.
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          MSE = bias² + variance = (0.27 − 1)² + 0.12 = 0.533 + 0.12 ≈ <strong>0.65</strong>.
+          Unregularized: (0.17 − 1)² + 0.70 = 0.689 + 0.70 ≈ <strong>1.39</strong> — worse on
+          <em>both</em> terms here.
+        </p>
+        <p>
+          The regularized estimator is more biased in exchange for stability, and the total ledger
+          favors it — that is the bias–variance tradeoff in two numbers.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 8</span><span>bagging, ideal case</span><span>compute</span></p>
+    <p class="q">
+      You average <var>B</var> = 25 predictors trained on independent samples; each has variance
+      σ² = 0.5 at your test point (and common mean). Variance of the average? What fraction of the
+      single-model variance did averaging remove?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Var(<var>h<sub>B</sub></var>) = σ²/<var>B</var> = 0.5/25 = <strong>0.02</strong>.
+          Removed: (1 − 1/<var>B</var>)σ² = 0.48, i.e. <strong>96%</strong>.
+        </p>
+        <p>
+          Note what did <em>not</em> change: the mean is still <var>f̄</var>, so the bias² term of
+          the error is exactly what it was for one model. Averaging is a variance-only instrument.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 9</span><span>the correlation floor</span><span>compute</span></p>
+    <p class="q">
+      Now the <var>B</var> predictors come from bootstrap resamples of one dataset:
+      pairwise correlation ρ = 0.4, individual variance σ²<sub>D</sub> = 0.9. Compute
+      Var(<var>h<sub>B</sub></var> | <var>D</var>) for <var>B</var> = 10 and for <var>B</var> → ∞.
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Var = (ρ + (1 − ρ)/<var>B</var>)σ²<sub>D</sub>. At <var>B</var> = 10:
+          (0.4 + 0.6/10)·0.9 = 0.46·0.9 ≈ <strong>0.41</strong>. As <var>B</var> → ∞:
+          ρσ²<sub>D</sub> = 0.4·0.9 = <strong>0.36</strong>.
+        </p>
+        <p>
+          Ten models already sit within 15% of the infinite-forest limit — once predictors are
+          correlated, extra copies buy almost nothing. The floor, not the budget, is the binding
+          constraint.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 10</span><span>random forests</span><span>explain</span></p>
+    <p class="q">
+      Using Var(<var>h<sub>B</sub></var> | <var>D</var>) = (ρ + (1 − ρ)/<var>B</var>)σ²<sub>D</sub>,
+      explain in two sentences why random forests restrict each split to a random subset of
+      features.
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Trees grown on bootstrap copies of the same data pick the same few strong features at
+          their top splits, which makes ρ large — and the formula says no amount of averaging can
+          push the variance below ρσ²<sub>D</sub>. Randomizing the candidate features forces trees
+          to grow along different variables, decorrelating them; a smaller ρ lowers the
+          <var>B</var> → ∞ floor itself, which is worth more than any number of extra correlated
+          trees.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 11</span><span>bootstrap fine print</span><span>explain</span></p>
+    <p class="q">
+      The sheet estimates the mean and variance of ŵ<sub>j</sub> from <var>T</var> = 200 bootstrap
+      refits. What are these two numbers trying to approximate, and in which direction are they
+      biased?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          They approximate the estimator's true <em>sampling distribution</em> — its mean and
+          variance under independent fresh samples of <var>n</var> points from the population.
+        </p>
+        <p>
+          But all 200 resamples are drawn from a single dataset and any two share ≈ 63% of their
+          rows, so they are far from independent — the bootstrap variance typically
+          <strong>underestimates</strong> the true sampling variance. (The same ≈ 63% overlap is
+          what makes ρ &gt; 0 in № 9: it is one phenomenon wearing two hats.)
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="takeaway">
+    <p>
+      <strong>If you remember one thing:</strong> every number a fitted model reports is a random
+      variable. Exercises 1–2 ask what its <em>mean</em> is aiming at (a partial, non-causal
+      effect) and show its <em>variance</em> exploding at d ≈ n; Exercise 3 shows the two levers
+      you own — shrink the estimate (λ) or average retrainings (<var>B</var>) — and proves each
+      lever's limit: shrinkage costs bias, and averaging stops at the correlation floor ρσ².
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  var svg = document.getElementById("map-svg");
+  var defs = el(svg, "defs", {});
+  var marker = el(defs, "marker", {
+    id: "arr", viewBox: "0 0 10 10", refX: 8, refY: 5,
+    markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse"
+  });
+  el(marker, "path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--muted)" });
+
+  function box(x, y, w, h, stroke, fill) {
+    el(svg, "rect", { x: x, y: y, width: w, height: h, rx: 8, fill: fill, stroke: stroke, "stroke-width": 1.5 });
+  }
+
+  // top box: the disease
+  box(230, 14, 300, 74, "var(--line)", "var(--card)");
+  txt(svg, 380, 40, "the disease — variance", { "text-anchor": "middle", "font-size": "16", fill: "var(--ink)", "font-weight": "bold" });
+  txt(svg, 380, 60, "d ≈ n, correlated features:", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svg, 380, 76, "ŵ wobbles wildly from sample to sample", { "class": "axis-label", "text-anchor": "middle" });
+
+  // arrows
+  el(svg, "line", { x1: 305, y1: 88, x2: 205, y2: 148, stroke: "var(--muted)", "stroke-width": 1.5, "marker-end": "url(#arr)" });
+  el(svg, "line", { x1: 455, y1: 88, x2: 555, y2: 148, stroke: "var(--muted)", "stroke-width": 1.5, "marker-end": "url(#arr)" });
+
+  // left box: shrink
+  box(30, 152, 340, 88, "var(--amber)", "var(--amber-soft)");
+  txt(svg, 200, 180, "medicine 1 — shrink (λ)", { "text-anchor": "middle", "font-size": "16", fill: "var(--amber)", "font-weight": "bold" });
+  txt(svg, 200, 202, "ridge / lasso: pull ŵ toward 0  (Ex 1–2)", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svg, 200, 220, "bias up a little · variance down a lot", { "class": "axis-label", "text-anchor": "middle" });
+
+  // right box: average
+  box(390, 152, 340, 88, "var(--crimson)", "var(--crimson-soft)");
+  txt(svg, 560, 180, "medicine 2 — average (B)", { "text-anchor": "middle", "font-size": "16", fill: "var(--crimson)", "font-weight": "bold" });
+  txt(svg, 560, 202, "bagging: mean of B retrained models  (Ex 3)", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svg, 560, 220, "bias unchanged · variance ÷ B, floor ρσ²", { "class": "axis-label", "text-anchor": "middle" });
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · the explainers for this sheet: <a href="coefficients.html">Exercises 1–2 — reading coefficients</a> · <a href="bagging.html">Exercise 3 — bagging &amp; variance</a> · Statistical Machine Learning, Uni Tübingen</footer>
+</body>
+</html>

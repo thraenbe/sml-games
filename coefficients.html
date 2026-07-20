@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧭</text></svg>">
+<title>Reading Coefficients — Weights, Partial Effects &amp; the λ Dial</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  @media (max-width: 720px) { .fig-grid { grid-template-columns: 1fr; } }
+  .fig-cell svg, .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 8rem; min-width: 7rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Assignment 7 · Exercises 1 &amp; 2 · Weights &amp; What Coefficients Mean</p>
+  <h1>A coefficient is not a correlation.</h1>
+  <p class="lede">
+    These two exercises look like bookkeeping — reweight a loss, read off a fitted number — but
+    together they ask the sheet's real question: <em>what does ŵ<sub>j</sub> actually tell you?</em>
+    The answer is a partial, statistical, high-variance statement about your one sample, and each of
+    those three adjectives is a warning. This page works through the warnings in order, ending at
+    the λ dial where bias is traded for variance on purpose.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>marginal — one feature looked at alone</span>
+    <span class="chip"><span class="dot c"></span>partial — after the other features speak</span>
+    <span class="chip"><span class="dot a"></span>the regularization dial λ</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">Exercise 1 · the warm-up</span>Weighted least squares: the same machine, reweighted evidence</h2>
+  <p>
+    Give each data point a weight <var>r<sub>i</sub></var> &gt; 0 and minimize the reweighted
+    empirical error:
+  </p>
+  <p class="eq"><var>L</var>(<var>w</var>) &#61; (1/<var>n</var>) Σ<sub><var>i</var></sub> <var>r<sub>i</sub></var> (<var>Y<sub>i</sub></var> − ⟨<var>X<sub>i</sub></var>, <var>w</var>⟩)²</p>
+  <p>
+    With <var>R</var> = diag(<var>r</var>₁, …, <var>r<sub>n</sub></var>) this is
+    (1/<var>n</var>)(<var>Y</var> − <var>Xw</var>)<sup>T</sup><var>R</var>(<var>Y</var> − <var>Xw</var>).
+    Setting the gradient (2/<var>n</var>)<var>X</var><sup>T</sup><var>R</var>(<var>Xw</var> − <var>Y</var>)
+    to zero gives reweighted normal equations, and since all <var>r<sub>i</sub></var> &gt; 0 make
+    <var>X</var><sup>T</sup><var>RX</var> positive definite (for full-column-rank <var>X</var>), the
+    minimizer is unique:
+  </p>
+  <p class="eq boxed"><var>w</var><sup>⋆</sup> &#61; (<var>X</var><sup>T</sup><var>RX</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>RY</var></p>
+  <p>
+    The tidy way to remember it: weighting is <em>rescaling</em>. Replace each row by
+    √<var>r<sub>i</sub></var>&#8202;<var>X<sub>i</sub></var> and √<var>r<sub>i</sub></var>&#8202;<var>Y<sub>i</sub></var>
+    and run ordinary least squares — a point with weight 4 counts exactly like 4 copies of itself.
+    The machine doesn't care <em>why</em> the evidence is weighted; it just balances whatever
+    evidence it is handed. That indifference is the point: everything that follows is about what the
+    balanced answer means.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · weighted least squares — click a point to change its weight <span class="tn"><var>r<sub>i</sub></var></span></p>
+    <svg id="wls-svg" viewBox="0 0 760 380" role="img" aria-label="A scatter of points with a through-origin least squares line; clicking a point cycles its weight and refits the crimson line, while the blue dashed line keeps all weights equal"></svg>
+    <div class="readouts">
+      <span>weighted ŵ = <b id="wlsval">–</b></span>
+      <span>all weights 1: ŵ = <b id="wls0val">–</b></span>
+      <span>click cycles r<sub>i</sub>: 1 → 4 → 9 → 1</span>
+    </div>
+  </div>
+  <figcaption>
+    A one-feature, bias-free fit: ŵ = Σ<var>r<sub>i</sub>x<sub>i</sub>y<sub>i</sub></var> / Σ<var>r<sub>i</sub>x<sub>i</sub></var>².
+    Bigger dots carry more weight and pull the crimson line toward themselves — a weight-9 point is
+    nine copies of itself. The blue dashed line is the unweighted fit for reference.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Exercise 2 (a) · Frisch–Waugh–Lovell</span>What ŵ<sub>j</sub> measures: the partial effect</h2>
+  <p>
+    For a single centred feature the story is simple: the optimal slope is
+    <span class="b">Cov(<var>X</var>, <var>Y</var>) / Var(<var>X</var>)</span> — a rescaled
+    correlation. With two standardized features whose correlation is ρ, solving the normal
+    equations <var>X</var><sup>T</sup><var>Xw</var> = <var>X</var><sup>T</sup><var>Y</var> gives
+    something different:
+  </p>
+  <p class="eq"><var>w</var>₁<sup>⋆</sup> &#61; ( Cov(<var>X</var>₁, <var>Y</var>) − ρ&#8202;Cov(<var>X</var>₂, <var>Y</var>) ) / (1 − ρ²)</p>
+  <p>
+    The numerator <em>subtracts</em> the part of <var>X</var>₁'s association that <var>X</var>₂
+    already accounts for. Define the residuals of <var>X</var>₁ and <var>Y</var> after their best
+    linear predictions from <var>X</var>₂ — written
+    <var>X</var>₁<sup>⊥</sup> and <var>Y</var><sup>⊥</sup> — and the formula collapses back into
+    the familiar Cov/Var shape, applied to leftovers:
+  </p>
+  <p class="eq boxed"><span class="c"><var>w<sub>j</sub></var><sup>⋆</sup></span> &#61; Cov(<var>X<sub>j</sub></var><sup>⊥</sup>, <var>Y</var><sup>⊥</sup>) / Var(<var>X<sub>j</sub></var><sup>⊥</sup>)</p>
+  <p>
+    That is the meaning of a regression coefficient: the linear association between
+    <var>X<sub>j</sub></var> and <var>Y</var> <strong>after removing what the other features
+    already explain</strong> — the <em>partial</em> effect of <var>X<sub>j</sub></var> given the
+    rest. The general case (<var>d</var> &gt; 2) is the same computation with block-matrix algebra.
+    Play with the three ingredients below and watch the marginal and partial views come apart.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · marginal vs partial — two answers to “how is <span class="tn"><var>X</var>₁</span> related to <span class="tn"><var>Y</var></span>?”</p>
+    <svg id="mp-svg" viewBox="0 0 760 258" role="img" aria-label="Two horizontal bars: the marginal covariance of X1 with Y in blue and the partial regression coefficient in crimson, updating with the correlation and covariance sliders"></svg>
+    <div class="controls">
+      <label for="rho">corr(<var>X</var>₁,<var>X</var>₂) ρ = <span id="rhoval">0.60</span></label>
+      <input type="range" id="rho" min="-0.9" max="0.9" step="0.05" value="0.6" aria-label="correlation rho">
+      <label for="c1">Cov(<var>X</var>₁,<var>Y</var>) = <span id="c1val">0.60</span></label>
+      <input type="range" id="c1" min="-1" max="1" step="0.05" value="0.6" aria-label="covariance of X1 and Y">
+      <label for="c2">Cov(<var>X</var>₂,<var>Y</var>) = <span id="c2val">1.00</span></label>
+      <input type="range" id="c2" min="-1" max="1" step="0.05" value="1" aria-label="covariance of X2 and Y">
+    </div>
+    <div class="controls" style="border-top: none; padding-top: 0;">
+      <button class="preset" id="pre1">part (b): Y = X₂ — the hidden twin</button>
+      <button class="preset" id="pre2">part (b): Y = X₂ − ρX₁</button>
+      <button class="preset" id="pre3">part (d): near-collinear danger</button>
+    </div>
+    <div class="readouts">
+      <span>w₁* = (c₁ − ρc₂)/(1 − ρ²) = <b id="w1val">–</b></span>
+      <span class="flag" id="flipflag">sign flip — the partial effect points the other way</span>
+      <span class="flag amber" id="boomflag">|w₁*| explodes as ρ → ±1 — collinearity</span>
+    </div>
+  </div>
+  <figcaption>
+    The blue bar is what a scatter plot of <var>X</var>₁ against <var>Y</var> would show; the
+    crimson bar is what the regression reports. The presets are the sheet's own examples: when
+    <var>Y</var> = <var>X</var>₂, feature 1 is marginally correlated but its coefficient is exactly
+    0; when <var>Y</var> = <var>X</var>₂ − ρ<var>X</var>₁, the marginal covariance vanishes while
+    the coefficient is −ρ. And as ρ → ±1 the denominator 1 − ρ² dies, so the coefficient becomes
+    huge and unstable — collinearity in one formula.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Exercise 2 (b) &amp; (c) · two warnings</span>Zero is not “unrelated”, and 0.5 is not a lever</h2>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">(b) · neither direction holds</p>
+      <p>
+        <var>w<sub>j</sub></var><sup>⋆</sup> = 0 does <em>not</em> imply Cov(<var>X<sub>j</sub></var>, <var>Y</var>) = 0,
+        and Cov = 0 does not imply <var>w<sub>j</sub></var><sup>⋆</sup> = 0 — both presets in
+        Figure&nbsp;2 are counterexamples. Marginal covariance ignores the other features; the
+        coefficient accounts for them. The two numbers answer different questions, so neither can
+        stand in for the other.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(c) · not causal</p>
+      <p>
+        “Increasing <var>X<sub>j</sub></var> by one unit increases <var>Y</var> by 0.5” is a claim
+        about an <em>intervention</em>. The coefficient only describes the conditional mean inside
+        the joint distribution you observed. The two coincide under assumptions — no unobserved
+        confounders, no reverse causation, true linearity — that essentially never hold in
+        observational data. Regression describes; it does not promise.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Exercise 2 (d) &amp; (e) · Communities &amp; Crime</span>99 features, 100 communities: the estimate falls apart</h2>
+  <p>
+    Now the warnings become numbers. On the Communities &amp; Crime data (<var>d</var> = 99
+    standardized features, a subsample of <var>n</var> = 100 communities, target: violent-crime
+    rate, feature of interest: <code style="font-family: ui-monospace, Menlo, monospace; font-size: 0.88em;">PctUnemployed</code>),
+    OLS reports an in-sample R² ≈ 1.00 — with a nearly square design matrix it can fit the training
+    labels almost perfectly, which is a red flag, not an achievement.
+  </p>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">(d) · OLS, no regularization</p>
+      <p>
+        <span class="b">marginal correlation ≈ +0.53</span><br>
+        <span class="c">coefficient ŵ<sub>j</sub><sup>OLS</sup> ≈ −0.14</span>
+      </p>
+      <p>
+        Even the sign flips. Unemployment has many highly correlated competitors — poverty, low
+        income, low education, single-parent households — and swapping one for another barely
+        changes the fit, so the optimizer is free to give unemployment a negative loading that other
+        coordinates cancel out. The estimate has enormous variance: a different sample of 100
+        communities would give a wildly different number.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(e) · lasso, λ = 0.3</p>
+      <p>
+        <span class="c">ŵ<sub>j</sub><sup>Lasso</sup> = 0</span> &nbsp;·&nbsp; only 6 of 99 coefficients survive
+      </p>
+      <p>
+        The opposite failure mode: a reader might now conclude unemployment has <em>no</em>
+        association with crime — also wrong, since the +0.53 marginal correlation hasn't gone
+        anywhere. Among correlated variables the lasso solution is not unique in spirit: it picks
+        <em>one representative per cluster</em>, and a slightly different sample or λ would crown a
+        different feature.
+      </p>
+    </div>
+  </div>
+  <p>
+    So the honest summary of (d)–(e) is symmetric: the unregularized number is meaningless because
+    its variance is huge, and the regularized zero is meaningful only as “not selected”, never as
+    “unrelated”.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Exercise 2 (f) &amp; (g) · the bootstrap experiment</span>Turning the λ dial: bias buys variance</h2>
+  <p>
+    To watch the trade-off directly, the sheet builds a synthetic target on the same design matrix
+    where the truth is known: a sparse <var>w</var><sup>⋆</sup> with 10 active coordinates and
+    <var>w<sub>j</sub></var><sup>⋆</sup> = 1 on the feature of interest. Then: draw
+    <var>T</var> = 200 bootstrap samples, fit a lasso at every λ on a log grid, and record the
+    bootstrap mean and variance of ŵ<sub>j</sub>. Those two curves are exactly the two ingredients
+    of the bias–variance decomposition.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 3 · bootstrap mean <span class="tn">(left)</span> and variance <span class="tn">(right)</span> of the lasso ŵ<span class="tn"><sub>j</sub></span> — slide λ</p>
+    <div class="fig-grid">
+      <div class="fig-cell"><svg id="mean-svg" viewBox="0 0 440 330" role="img" aria-label="Bootstrap mean of the lasso coefficient against lambda on a log scale, far below the dashed truth line at one"></svg></div>
+      <div class="fig-cell"><svg id="var-svg" viewBox="0 0 440 330" role="img" aria-label="Bootstrap variance of the lasso coefficient against lambda on a log scale, collapsing from 0.7 toward zero"></svg></div>
+    </div>
+    <div class="controls">
+      <label for="lamdial">regularization λ = <span id="lamdialval">–</span></label>
+      <input type="range" id="lamdial" min="0" max="100" step="0.5" value="43" aria-label="lambda on a log scale">
+    </div>
+    <div class="readouts">
+      <span>mean ŵ<sub>j</sub> ≈ <b id="mval">–</b></span>
+      <span>variance ≈ <b id="vval">–</b></span>
+      <span>bias² + var ≈ <b id="mseval">–</b></span>
+      <span class="flag" id="sweetflag">near λ* ≈ 0.03 — the sweet spot</span>
+    </div>
+  </div>
+  <figcaption>
+    Stylized curves reproducing the sheet's experiment (T = 200 bootstraps, truth
+    <var>w<sub>j</sub></var><sup>⋆</sup> = 1, dashed). For tiny λ the variance is huge (≈ 0.7):
+    each resample has ≈ 63 unique rows, the design is rank-deficient, and the lasso crowns a
+    different member of the correlated cluster every time. As λ grows the variance collapses — but
+    the mean, which climbs from ≈ 0.17 to a peak of ≈ 0.27 near λ ≈ 0.03, is then shrunk away from
+    the truth toward 0. Small λ: all variance. Large λ: all bias. The combined error
+    bias² + variance is smallest in between.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p>
+    The deviation of the mean curve from <var>w<sub>j</sub></var><sup>⋆</sup> = 1 is the
+    (estimated) <span class="a">bias</span> of ŵ<sub>j</sub>, and the right panel is its
+    <span class="c">variance</span> — so Figure 3 <em>is</em> the classical bias–variance
+    decomposition, observed in the wild for ℓ¹ regularization: λ shifts probability mass between
+    the two terms, and the sweet spot λ* ≈ 0.03 sits where the mean is closest to the truth while
+    the variance has already dropped by about a factor of six.
+  </p>
+  <p>
+    Part (g) adds the fine print: the bootstrap mean and variance are trying to approximate the
+    estimator's true sampling distribution — what would happen under <em>independent fresh
+    samples</em> of 100 communities. But all 200 resamples are drawn from one dataset and any two
+    of them share ≈ 63% of their rows, so they are far from independent, and the bootstrap variance
+    typically <em>underestimates</em> the real sampling variance. Even the honest-looking error
+    bars are optimistic. Keep that ≈ 63% overlap in mind — it returns as the villain ρ in
+    <a href="bagging.html">Exercise 3</a>.
+  </p>
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> A regression coefficient answers one precise question:
+      how the conditional mean of <var>Y</var> moves with <var>X<sub>j</sub></var> <em>after</em>
+      the other features have explained what they can, <em>in the sample you happened to draw</em>.
+      It is not a marginal correlation — the sign can differ. It is not a causal effect — no
+      intervention was observed. And when d ≈ n with correlated features, it is barely an estimate
+      at all. Regularization doesn't restore the naive reading; it deliberately biases the estimate
+      toward 0 to buy enough variance reduction that the number stabilizes. Managing that budget —
+      bias bought, variance sold — is the actual subject of this sheet, and Exercise 3 plays the
+      same trade with a different instrument: averaging.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  /* ---------- Figure 1: weighted least squares ---------- */
+  var svg1 = document.getElementById("wls-svg");
+  var W1 = 760, H1 = 380, m1 = { l: 50, r: 16, t: 18, b: 44 };
+  var pw1 = W1 - m1.l - m1.r, ph1 = H1 - m1.t - m1.b;
+  var XHI = 4.3, YHI = 5.6;
+  function sx(x) { return m1.l + (x / XHI) * pw1; }
+  function sy(y) { return m1.t + (1 - y / YHI) * ph1; }
+
+  for (var g = 0; g <= 4; g++) el(svg1, "line", { x1: sx(g), y1: m1.t, x2: sx(g), y2: H1 - m1.b, stroke: "var(--grid)", "stroke-width": 1 });
+  for (g = 0; g <= 5; g++) el(svg1, "line", { x1: m1.l, y1: sy(g), x2: W1 - m1.r, y2: sy(g), stroke: "var(--grid)", "stroke-width": 1 });
+  el(svg1, "line", { x1: m1.l, y1: sy(0), x2: W1 - m1.r, y2: sy(0), stroke: "var(--muted)", "stroke-width": 1 });
+  el(svg1, "line", { x1: sx(0), y1: m1.t, x2: sx(0), y2: H1 - m1.b, stroke: "var(--muted)", "stroke-width": 1 });
+  for (g = 1; g <= 4; g++) txt(svg1, sx(g), H1 - m1.b + 18, g, { "class": "axis-label", "text-anchor": "middle" });
+  for (g = 1; g <= 5; g++) txt(svg1, m1.l - 8, sy(g) + 4, g, { "class": "axis-label", "text-anchor": "end" });
+  txt(svg1, W1 - m1.r, H1 - 8, "x", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg1, m1.l - 34, m1.t - 4, "y", { "class": "axis-label" });
+
+  var baseLine = el(svg1, "line", { stroke: "var(--blue)", "stroke-width": 1.5, "stroke-dasharray": "6 4", "stroke-opacity": 0.8 });
+  var wLine = el(svg1, "line", { stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  txt(svg1, m1.l + 18, m1.t + 20, "weighted fit", { fill: "var(--crimson)", "font-size": "13", "font-weight": "bold" });
+  txt(svg1, m1.l + 18, m1.t + 40, "all weights 1 (dashed)", { fill: "var(--blue)", "font-size": "13" });
+
+  var PTS = [
+    { x: 0.6, y: 0.9 }, { x: 1.1, y: 1.6 }, { x: 1.6, y: 1.5 }, { x: 2.1, y: 3.1 },
+    { x: 2.6, y: 2.6 }, { x: 3.1, y: 4.4 }, { x: 3.6, y: 3.6 }, { x: 3.9, y: 5.3 }
+  ];
+  var RAD = { 1: 5.5, 4: 8.5, 9: 11.5 };
+  PTS.forEach(function (p, i) {
+    p.r = 1;
+    p.dot = el(svg1, "circle", {
+      cx: sx(p.x), cy: sy(p.y), r: RAD[1],
+      fill: "var(--card)", stroke: "var(--ink)", "stroke-width": 2,
+      style: "cursor: pointer;", tabindex: 0, role: "button",
+      "aria-label": "data point " + (i + 1) + ", click to change weight"
+    });
+    p.lab = txt(svg1, 0, 0, "", { fill: "var(--ink-2)", "font-size": "12", "class": "axis-label" });
+    function cycle() {
+      p.r = p.r === 1 ? 4 : (p.r === 4 ? 9 : 1);
+      render1();
+    }
+    p.dot.addEventListener("click", cycle);
+    p.dot.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" || ev.key === " ") { cycle(); ev.preventDefault(); }
+    });
+  });
+
+  function fitW() {
+    var num = 0, den = 0;
+    PTS.forEach(function (p) { num += p.r * p.x * p.y; den += p.r * p.x * p.x; });
+    return num / den;
+  }
+  var w0 = (function () {
+    var num = 0, den = 0;
+    PTS.forEach(function (p) { num += p.x * p.y; den += p.x * p.x; });
+    return num / den;
+  })();
+
+  function lineEnd(w) {
+    var xe = XHI, ye = w * XHI;
+    if (ye > YHI) { xe = YHI / w; ye = YHI; }
+    return { x: xe, y: ye };
+  }
+  var wlsEl = document.getElementById("wlsval");
+  var wls0El = document.getElementById("wls0val");
+
+  function render1() {
+    var w = fitW();
+    var e0 = lineEnd(w0), e1 = lineEnd(w);
+    baseLine.setAttribute("x1", sx(0)); baseLine.setAttribute("y1", sy(0));
+    baseLine.setAttribute("x2", sx(e0.x)); baseLine.setAttribute("y2", sy(e0.y));
+    wLine.setAttribute("x1", sx(0)); wLine.setAttribute("y1", sy(0));
+    wLine.setAttribute("x2", sx(e1.x)); wLine.setAttribute("y2", sy(e1.y));
+    PTS.forEach(function (p) {
+      p.dot.setAttribute("r", RAD[p.r]);
+      if (p.r > 1) {
+        p.lab.textContent = "×" + p.r;
+        p.lab.setAttribute("x", sx(p.x) + RAD[p.r] + 5);
+        p.lab.setAttribute("y", sy(p.y) - RAD[p.r] - 2);
+      } else p.lab.textContent = "";
+    });
+    wlsEl.textContent = w.toFixed(2);
+    wls0El.textContent = w0.toFixed(2);
+  }
+  render1();
+
+  /* ---------- Figure 2: marginal vs partial ---------- */
+  var svg2 = document.getElementById("mp-svg");
+  var W2 = 760, H2 = 258;
+  var bx0 = 190, bx1 = 744, VLO = -3, VHI = 3;
+  function bx(v) { return bx0 + ((v - VLO) / (VHI - VLO)) * (bx1 - bx0); }
+  var rowY = [78, 158], BH = 30;
+
+  for (g = -3; g <= 3; g++) {
+    el(svg2, "line", { x1: bx(g), y1: 34, x2: bx(g), y2: 200, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg2, bx(g), 222, g, { "class": "axis-label", "text-anchor": "middle" });
+  }
+  el(svg2, "line", { x1: bx(0), y1: 34, x2: bx(0), y2: 200, stroke: "var(--muted)", "stroke-width": 1.5 });
+  txt(svg2, 16, rowY[0] - 22, "marginal view", { "class": "axis-label" });
+  txt(svg2, 16, rowY[0] - 2, "Cov(X₁, Y)", { fill: "var(--blue)", "font-size": "15" });
+  txt(svg2, 16, rowY[1] - 22, "what regression reports", { "class": "axis-label" });
+  txt(svg2, 16, rowY[1] - 2, "partial w₁*", { fill: "var(--crimson)", "font-size": "15" });
+
+  var mBar = el(svg2, "rect", { y: rowY[0] - BH / 2 - 14, height: BH, rx: 3, fill: "var(--blue)" });
+  var pBar = el(svg2, "rect", { y: rowY[1] - BH / 2 - 14, height: BH, rx: 3, fill: "var(--crimson)" });
+  var mNum = txt(svg2, 0, rowY[0] - 8, "", { "class": "axis-label", fill: "var(--ink)" });
+  var pNum = txt(svg2, 0, rowY[1] - 8, "", { "class": "axis-label", fill: "var(--ink)" });
+
+  var rhoS = document.getElementById("rho"), c1S = document.getElementById("c1"), c2S = document.getElementById("c2");
+  var rhoEl = document.getElementById("rhoval"), c1El = document.getElementById("c1val"), c2El = document.getElementById("c2val");
+  var w1El = document.getElementById("w1val");
+  var flipFlag = document.getElementById("flipflag"), boomFlag = document.getElementById("boomflag");
+
+  function setBar(bar, num, v) {
+    var cl = Math.max(VLO, Math.min(VHI, v));
+    var x0 = bx(Math.min(0, cl)), x1p = bx(Math.max(0, cl));
+    bar.setAttribute("x", x0);
+    bar.setAttribute("width", Math.max(1.5, x1p - x0));
+    var off = Math.abs(v) > VHI;
+    var label = v.toFixed(2) + (off ? " (off scale)" : "");
+    num.textContent = label;
+    if (cl >= 0) { num.setAttribute("x", bx(cl) + 8); num.setAttribute("text-anchor", "start"); }
+    else { num.setAttribute("x", bx(cl) - 8); num.setAttribute("text-anchor", "end"); }
+  }
+
+  function render2() {
+    var rho = parseFloat(rhoS.value), c1 = parseFloat(c1S.value), c2 = parseFloat(c2S.value);
+    rhoEl.textContent = rho.toFixed(2);
+    c1El.textContent = c1.toFixed(2);
+    c2El.textContent = c2.toFixed(2);
+    var w1 = (c1 - rho * c2) / (1 - rho * rho);
+    setBar(mBar, mNum, c1);
+    setBar(pBar, pNum, w1);
+    w1El.textContent = w1.toFixed(2);
+    flipFlag.classList.toggle("on", Math.abs(c1) > 0.02 && Math.abs(w1) > 0.02 && Math.sign(c1) !== Math.sign(w1));
+    boomFlag.classList.toggle("on", Math.abs(w1) > VHI);
+  }
+  [rhoS, c1S, c2S].forEach(function (s) { s.addEventListener("input", render2); });
+  function preset(rho, c1, c2) {
+    rhoS.value = rho; c1S.value = c1; c2S.value = c2; render2();
+  }
+  document.getElementById("pre1").addEventListener("click", function () { preset(0.6, 0.6, 1); });
+  document.getElementById("pre2").addEventListener("click", function () { preset(0.6, 0, 0.65); });
+  document.getElementById("pre3").addEventListener("click", function () { preset(0.9, 0.8, -0.3); });
+  render2();
+
+  /* ---------- Figure 3: bootstrap mean & variance vs lambda ---------- */
+  var W3 = 440, H3 = 330, m3 = { l: 50, r: 14, t: 18, b: 42 };
+  var pw3 = W3 - m3.l - m3.r, ph3 = H3 - m3.t - m3.b;
+  var ULO = -3, UHI = 0.5;
+  function ux(u) { return m3.l + ((u - ULO) / (UHI - ULO)) * pw3; }
+
+  function meanCurve(u) {
+    var gz = 0.17 + 0.10 * Math.exp(-Math.pow((u + 1.5) / 0.6, 2));
+    var cut = 1 / (1 + Math.exp((u + 1.0) / 0.16));
+    return gz * cut;
+  }
+  function varCurve(u) {
+    return 0.76 / (1 + Math.exp((u + 2.15) / 0.35));
+  }
+
+  function buildPanel(svg, ymax, yticks, ylabel, curveFn, extras) {
+    function yy(v) { return m3.t + (1 - v / ymax) * ph3; }
+    yticks.forEach(function (v) {
+      el(svg, "line", { x1: m3.l, y1: yy(v), x2: W3 - m3.r, y2: yy(v), stroke: "var(--grid)", "stroke-width": 1 });
+      txt(svg, m3.l - 7, yy(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+    });
+    for (var u = -3; u <= 0; u++) {
+      el(svg, "line", { x1: ux(u), y1: m3.t, x2: ux(u), y2: H3 - m3.b, stroke: "var(--grid)", "stroke-width": 1 });
+    }
+    el(svg, "line", { x1: m3.l, y1: yy(0), x2: W3 - m3.r, y2: yy(0), stroke: "var(--muted)", "stroke-width": 1 });
+    var tickLabs = { "-3": "10⁻³", "-2": "10⁻²", "-1": "10⁻¹", "0": "10⁰" };
+    for (u = -3; u <= 0; u++) txt(svg, ux(u), H3 - m3.b + 18, tickLabs[u], { "class": "axis-label", "text-anchor": "middle" });
+    txt(svg, W3 - m3.r, H3 - 6, "λ (log scale)", { "class": "axis-label", "text-anchor": "end" });
+    txt(svg, m3.l - 36, m3.t - 5, ylabel, { "class": "axis-label" });
+    if (extras) extras(yy);
+    var d = "";
+    for (var i = 0; i <= 200; i++) {
+      var uu = ULO + (i / 200) * (UHI - ULO);
+      d += (i ? "L" : "M") + ux(uu).toFixed(1) + "," + yy(curveFn(uu)).toFixed(1);
+    }
+    el(svg, "path", { d: d, fill: "none", stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linecap": "round" });
+    var marker = el(svg, "line", { stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "4 4", y1: m3.t, y2: H3 - m3.b });
+    var dot = el(svg, "circle", { r: 6, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+    return { yy: yy, marker: marker, dot: dot };
+  }
+
+  var meanSvg = document.getElementById("mean-svg");
+  var meanP = buildPanel(meanSvg, 1.1, [0, 0.25, 0.5, 0.75, 1], "mean of ŵⱼ", meanCurve, function (yy) {
+    el(meanSvg, "line", { x1: m3.l, y1: yy(1), x2: W3 - m3.r, y2: yy(1), stroke: "var(--muted)", "stroke-width": 1.5, "stroke-dasharray": "7 5" });
+    txt(meanSvg, W3 - m3.r - 6, yy(1) + 18, "truth wⱼ* = 1", { fill: "var(--muted)", "font-size": "13", "text-anchor": "end" });
+  });
+  var varSvg = document.getElementById("var-svg");
+  var varP = buildPanel(varSvg, 0.78, [0, 0.25, 0.5, 0.75], "variance of ŵⱼ", varCurve, null);
+
+  var dial = document.getElementById("lamdial");
+  var lamDialEl = document.getElementById("lamdialval");
+  var mEl = document.getElementById("mval"), vEl = document.getElementById("vval"), mseEl = document.getElementById("mseval");
+  var sweetFlag = document.getElementById("sweetflag");
+
+  function render3() {
+    var u = ULO + (parseFloat(dial.value) / 100) * (UHI - ULO);
+    var lam = Math.pow(10, u);
+    lamDialEl.textContent = lam >= 0.1 ? lam.toFixed(2) : lam.toFixed(3);
+    var mv = meanCurve(u), vv = varCurve(u);
+    meanP.marker.setAttribute("x1", ux(u)); meanP.marker.setAttribute("x2", ux(u));
+    varP.marker.setAttribute("x1", ux(u)); varP.marker.setAttribute("x2", ux(u));
+    meanP.dot.setAttribute("cx", ux(u)); meanP.dot.setAttribute("cy", meanP.yy(mv));
+    varP.dot.setAttribute("cx", ux(u)); varP.dot.setAttribute("cy", varP.yy(vv));
+    mEl.textContent = mv.toFixed(2);
+    vEl.textContent = vv.toFixed(2);
+    var bias = 1 - mv;
+    mseEl.textContent = (bias * bias + vv).toFixed(2);
+    sweetFlag.classList.toggle("on", u > -1.8 && u < -1.15);
+  }
+  dial.addEventListener("input", render3);
+  render3();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · this sheet: <a href="bagging.html">Exercise 3 — bagging &amp; variance</a> · <a href="practice7.html">practice problems</a> · earlier: <a href="residual.html">the residual</a> · <a href="regimes.html">regimes &amp; ridge</a> · <a href="lasso.html">sparsity &amp; LASSO</a></footer>
+</body>
+</html>
