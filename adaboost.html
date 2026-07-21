@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+<title>AdaBoost by Hand — Five Points, Three Stumps &amp; the Exponential Clock</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 8rem; min-width: 7rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+  button.preset.active { border-color: var(--crimson); color: var(--crimson); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Assignment 8 · Exercise 1 · Boosting Decision Stumps</p>
+  <h1>Wrong answers get louder.</h1>
+  <p class="lede">
+    AdaBoost builds a strong classifier out of laughably weak ones — <em>decision stumps</em>, rules
+    that ask a single yes/no question about a single coordinate. The whole mechanism fits on the
+    smallest dataset that can show it: four positive points at the corners of a square, one negative
+    point at its centre. This page runs the algorithm by hand on those five points, then reads off
+    the general law hiding in them: mistakes get reweighted, the vote gets richer, and the training
+    error dies <em>exponentially</em> fast.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>class y = +1 — the four corners</span>
+    <span class="chip"><span class="dot c"></span>class y = −1 — the centre</span>
+    <span class="chip"><span class="dot a"></span>the data weights D<sub>i</sub></span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">the algorithm · one breath</span>A weighted vote, grown one round at a time</h2>
+  <p>
+    AdaBoost keeps a distribution <var>D</var><sup>(<var>t</var>)</sup> over the training points
+    (initially uniform, 1/<var>n</var> each). Each round <var>t</var>: train a weak classifier
+    <var>h<sub>t</sub></var> on the weighted data and record its weighted error
+    ε<sub><var>t</var></sub> = Σ<sub>mistakes</sub> <var>D<sub>i</sub></var><sup>(<var>t</var>)</sup>;
+    give it a say in the vote; then multiply every point's weight by
+    <var>e</var><sup>−<var>w<sub>t</sub>y<sub>i</sub>h<sub>t</sub></var>(<var>x<sub>i</sub></var>)</sup>
+    and renormalize — mistakes get louder, solved points get quieter. The final classifier is
+  </p>
+  <p class="eq boxed"><var>h</var>(<var>x</var>) &#61; sign( Σ<sub><var>t</var></sub> <var>w<sub>t</sub></var> <var>h<sub>t</sub></var>(<var>x</var>) ) ,&emsp;<span class="a"><var>w<sub>t</sub></var> &#61; ½ ln ( (1 − ε<sub><var>t</var></sub>) / ε<sub><var>t</var></sub> )</span></p>
+  <p>
+    A decision stump <var>h<sub>j,θ,s</sub></var> predicts <var>s</var> where
+    <var>x<sub>j</sub></var> &gt; θ and −<var>s</var> elsewhere — one axis-aligned line, two labelled
+    half-planes. Slide the threshold past all the points and the stump degenerates into the
+    <em>constant</em> classifier. Keep that degenerate case in mind: it wins round one.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">part (a) · round one</span>The best stump doesn't split at all</h2>
+  <p>
+    Any genuine split misclassifies at least two of the four corners: whichever side of the line
+    carries the prediction −1 contains at least two positives (and if it contains the centre too,
+    flipping <var>s</var> just moves the damage to the other side). So every splitting stump has
+    weighted error ≥ 2/5 — while the constant rule <var>h</var>₁ ≡ +1 errs only on the centre:
+    ε₁ = 1/5, giving <var>w</var>₁ = ½ ln 4 ≈ 0.69. Verify it yourself below, then apply the
+    reweighting and watch the game change: under the new weights the constant rule is worth exactly
+    a coin flip (ε = ½), and a genuine stump takes the lead.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · the stump explorer — find the round-1 winner, then reweight</p>
+    <svg id="stump-svg" viewBox="0 0 760 430" role="img" aria-label="Five points, four positive corners and one negative centre, with an adjustable decision stump splitting the plane; a side panel reports the weighted error and vote weight of the current stump"></svg>
+    <div class="controls">
+      <button class="preset active" id="coordx1">split on x₁</button>
+      <button class="preset" id="coordx2">split on x₂</button>
+      <button class="preset" id="signbtn">sign s = +1</button>
+      <label for="theta">threshold θ = <span id="thetaval">0.50</span></label>
+      <input type="range" id="theta" min="-0.3" max="1.3" step="0.05" value="0.5" aria-label="stump threshold theta">
+    </div>
+    <div class="controls" style="border-top: none; padding-top: 0;">
+      <button class="preset active" id="wUniform">round-1 weights — 1/5 each</button>
+      <button class="preset" id="wAfter">after round 1 — reweighted</button>
+    </div>
+    <div class="readouts">
+      <span>weighted error ε = <b id="epsval">–</b></span>
+      <span>vote weight w = <b id="wval">–</b></span>
+      <span class="flag amber" id="bestflag1">that's h₁ — the constant rule, the round-1 winner</span>
+      <span class="flag amber" id="bestflag2">ε = 1/4 — a real stump now beats the constant rule (ε = 1/2)</span>
+      <span class="flag" id="flipflag">worse than a coin flip — AdaBoost would flip it (w &lt; 0)</span>
+    </div>
+  </div>
+  <figcaption>
+    The shaded half-planes show the stump's prediction (blue = +1, crimson = −1); amber rings mark
+    its mistakes, and marker size is the current weight <var>D<sub>i</sub></var>. Slide θ past all
+    points to get the constant rule. After round 1 the centre's weight jumps from 1/5 to 1/2 and
+    each corner drops to 1/8 — the one mistake now carries half the mass, so ε for the constant rule
+    is ½ and it has nothing left to say.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p>
+    The reweighting numbers are worth doing once by hand. With ε₁ = 1/5 the update multiplies the
+    misclassified centre by <var>e</var><sup><var>w</var>₁</sup> = 2 and each correct corner by
+    <var>e</var><sup>−<var>w</var>₁</sup> = ½; renormalizing gives centre ½, corners ⅛. Notice what
+    the update achieved: the misclassified mass is now <em>exactly one half</em> — on the new
+    weights, <var>h</var>₁ has been reduced to random guessing. That is not a coincidence of this
+    dataset; it is an identity of AdaBoost, and it is the reason the next round is forced to find
+    something genuinely new.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">parts (b) &amp; (c) · how many rounds?</span>Three stumps, because + | − | + takes three</h2>
+  <p>
+    The five points demand a <em>non-monotone</em> pattern along <var>x</var>₁: positive, then
+    negative, then positive. One stump draws one line — hopeless. Two stumps can't do it either
+    (that is part (c): a vote sign(<var>w</var>₁<var>h</var>₁ + <var>w</var>₂<var>h</var>₂) that
+    labels the centre −1 must let some stump predict −1 there, and any axis-aligned stump that does
+    so also swallows two far-side corners; chasing the signs through both cases shows the four
+    corners can never all come out +1). Three classifiers suffice: the constant rule plus two
+    thresholds on the same coordinate, at θ = 0.25 and θ = 0.75. Toggle them below.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · the three-stump vote — toggle voters in and out</p>
+    <svg id="vote-svg" viewBox="0 0 760 430" role="img" aria-label="The five points with the plane split into three vertical bands by two thresholds; toggling the three weak classifiers shows that only the full vote of all three separates the data"></svg>
+    <div class="controls">
+      <button class="preset active" id="tg1">h₁ ≡ +1 · w = 0.8</button>
+      <button class="preset active" id="tg2">h₂ = −1 if x₁ &gt; 0.25 · w = 1.0</button>
+      <button class="preset active" id="tg3">h₃ = +1 if x₁ &gt; 0.75 · w = 0.9</button>
+    </div>
+    <div class="readouts">
+      <span>training error = <b id="voteerr">–</b></span>
+      <span class="flag amber" id="zeroflag">zero — the + | − | + bands need all three voters</span>
+      <span class="flag" id="pairflag">no subset of one or two voters separates the five points</span>
+    </div>
+  </div>
+  <figcaption>
+    The weighted vote splits the plane into vertical bands; band colour is the sign of
+    <var>f</var>(<var>x</var>) = 0.8&#8202;<var>h</var>₁ + 1.0&#8202;<var>h</var>₂ + 0.9&#8202;<var>h</var>₃
+    (restricted to the active voters). All three together carve out the middle band
+    0.25 &lt; <var>x</var>₁ &lt; 0.75 that isolates the centre — the region AdaBoost carves once the
+    negative example has accumulated enough weight. Every sub-vote leaves at least one point on the
+    wrong side, so boosting needs (at least) three rounds here; adding a training point can't lower
+    that, since any two-stump vote that separated a larger set would also separate these five.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">parts (d) &amp; (e) · the general law</span>Weak on purpose, and provably fast</h2>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">(d) · why weak learners?</p>
+      <p>
+        A strong learner could fit (and overfit) the data in round one, leaving boosting nothing to
+        combine — the ensemble inherits its full complexity immediately. Ensemble complexity grows
+        every round, so starting from weak, low-complexity rules keeps the final classifier as
+        simple as the task allows. Weakness is not a bug being tolerated; it is the resource being
+        spent gradually.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(e) · the exponential clock</p>
+      <p>
+        If every round's weighted error stays below ½ − γ, the lecture's bound says the training
+        error of the vote is at most <var>e</var><sup>−2γ²<var>T</var></sup>. Training error lives
+        on the grid 0, 1/<var>n</var>, 2/<var>n</var>, … — so the instant the bound drops below
+        1/<var>n</var>, the error is exactly 0.
+      </p>
+    </div>
+  </div>
+  <p class="eq boxed">training error ≤ <var>e</var><sup>−2γ²<var>T</var></sup> &lt; 1/<var>n</var> &nbsp;⟺&nbsp; <span class="c"><var>T</var> &gt; ln <var>n</var> / 2γ²</span></p>
+  <p>
+    Read the formula the optimistic way: <var>T</var> grows only <em>logarithmically</em> in the
+    sample size. A million training points and a pathetic edge of γ = 0.05 — classifiers barely
+    better than coin flips — still reach zero training error in 2764 rounds. Slide the two dials
+    and watch the crossing point.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 3 · the bound <span class="tn"><var>e</var><sup>−2γ²T</sup></span> racing the line <span class="tn">1/<var>n</var></span></p>
+    <svg id="clock-svg" viewBox="0 0 760 360" role="img" aria-label="The exponential training error bound as a straight line on a log scale, crossing the horizontal one over n line at the round count T star"></svg>
+    <div class="controls">
+      <label for="gam">edge γ = <span id="gamval">0.05</span></label>
+      <input type="range" id="gam" min="0.04" max="0.45" step="0.005" value="0.05" aria-label="weak learning edge gamma">
+      <label for="nexp">sample size n = 10<sup><span id="nexpval">6</span></sup></label>
+      <input type="range" id="nexp" min="1" max="6" step="1" value="6" aria-label="log10 of sample size">
+      <button class="preset" id="presheet">the sheet's numbers: γ = 0.05, n = 10⁶</button>
+    </div>
+    <div class="readouts">
+      <span>zero training error guaranteed at T* = <b id="tstarval">–</b> rounds</span>
+      <span class="flag amber" id="offflag">T* beyond the plot — a tiny edge is slow, but still only ∝ ln n</span>
+    </div>
+  </div>
+  <figcaption>
+    On a log scale the bound is a straight line falling at slope −2γ² per round; the blue dashed
+    line is 1/<var>n</var>. Their crossing is the guarantee: past it, the training error must be
+    exactly zero. Doubling the edge γ makes the clock tick four times faster; a thousand times more
+    data only moves the finish line by a constant summand. (The voluntary Exercise 4 fills in the
+    proof: each round multiplies the average exponential loss by
+    2√(ε<sub>t</sub>(1 − ε<sub>t</sub>)) ≤ <var>e</var><sup>−2γ²</sup>, and the factors compound.)
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> AdaBoost is a bookkeeping device for one quantity: the
+      average exponential loss of the running vote. The data weights <em>are</em> that ledger — a
+      point's weight is proportional to <var>e</var><sup>−<var>y<sub>i</sub>f<sub>t</sub></var>(<var>x<sub>i</sub></var>)</sup>,
+      so attention concentrates exactly where the ensemble is wrong or barely right. Each round's
+      <var>w<sub>t</sub></var> is the choice that shrinks the ledger the most, and it leaves the
+      round's own classifier reduced to a coin flip on the new weights — forcing genuine novelty
+      next round. Five points already show the whole ritual: a degenerate stump wins, its one
+      mistake gets loud, three rounds carve + | − | +, and in general the training error dies like
+      <var>e</var><sup>−2γ²<var>T</var></sup>. What happens if you keep boosting long <em>after</em>
+      zero is <a href="margins.html">Exercise 2's story</a> — and the whole algorithm re-appears as
+      gradient descent on a loss in <a href="gradboost.html">Exercise 3</a>.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  var PTS = [
+    { x: 0, y: 0, lab: 1 }, { x: 0, y: 1, lab: 1 }, { x: 1, y: 0, lab: 1 }, { x: 1, y: 1, lab: 1 },
+    { x: 0.5, y: 0.5, lab: -1 }
+  ];
+
+  /* ---------- Figure 1: stump explorer ---------- */
+  var svg1 = document.getElementById("stump-svg");
+  var LO = -0.3, HI = 1.3;
+  var px0 = 310, px1 = 680, py0 = 16, py1 = 386;
+  function sx(v) { return px0 + ((v - LO) / (HI - LO)) * (px1 - px0); }
+  function sy(v) { return py1 - ((v - LO) / (HI - LO)) * (py1 - py0); }
+
+  var regionA = el(svg1, "rect", { fill: "none" });
+  var regionB = el(svg1, "rect", { fill: "none" });
+
+  [0, 0.5, 1].forEach(function (g) {
+    el(svg1, "line", { x1: sx(g), y1: py0, x2: sx(g), y2: py1, stroke: "var(--grid)", "stroke-width": 1 });
+    el(svg1, "line", { x1: px0, y1: sy(g), x2: px1, y2: sy(g), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg1, sx(g), py1 + 18, g.toFixed(1), { "class": "axis-label", "text-anchor": "middle" });
+    txt(svg1, px0 - 8, sy(g) + 4, g.toFixed(1), { "class": "axis-label", "text-anchor": "end" });
+  });
+  el(svg1, "rect", { x: px0, y: py0, width: px1 - px0, height: py1 - py0, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  txt(svg1, px1, py1 + 34, "x₁", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg1, px0 - 30, py0 + 4, "x₂", { "class": "axis-label" });
+
+  var splitLine = el(svg1, "line", { stroke: "var(--ink)", "stroke-width": 1.8, "stroke-dasharray": "2 3" });
+
+  // left info column
+  txt(svg1, 16, 44, "current weak learner", { "class": "axis-label" });
+  var ruleT1 = txt(svg1, 16, 70, "", { "font-size": "15", fill: "var(--ink)" });
+  var ruleT2 = txt(svg1, 16, 92, "", { "font-size": "15", fill: "var(--ink)" });
+  txt(svg1, 16, 138, "weighted error εₜ", { "class": "axis-label" });
+  var epsT = txt(svg1, 16, 166, "", { "font-size": "20", "font-weight": "bold", fill: "var(--crimson)" });
+  txt(svg1, 16, 212, "vote weight wₜ = ½ ln (1−ε)/ε", { "class": "axis-label" });
+  var wT = txt(svg1, 16, 240, "", { "font-size": "20", "font-weight": "bold", fill: "var(--ink)" });
+  txt(svg1, 16, 288, "data weights Dᵢ", { "class": "axis-label" });
+  var dT1 = txt(svg1, 16, 312, "", { "font-size": "14", fill: "var(--amber)" });
+  var dT2 = txt(svg1, 16, 333, "", { "font-size": "14", fill: "var(--amber)" });
+
+  // points
+  PTS.forEach(function (p) {
+    p.ring = el(svg1, "circle", { cx: sx(p.x), cy: sy(p.y), fill: "none", stroke: "var(--amber)", "stroke-width": 2.5, r: 14, opacity: 0 });
+    var col = p.lab > 0 ? "var(--blue)" : "var(--crimson)";
+    p.h = el(svg1, "line", { stroke: col, "stroke-width": 4.5, "stroke-linecap": "round" });
+    if (p.lab > 0) p.v = el(svg1, "line", { stroke: col, "stroke-width": 4.5, "stroke-linecap": "round" });
+  });
+
+  var state = { j: 1, s: 1, theta: 0.5, reweighted: false };
+  var W_UNI = [0.2, 0.2, 0.2, 0.2, 0.2];
+  var W_AFTER = [0.125, 0.125, 0.125, 0.125, 0.5];
+
+  var thetaS = document.getElementById("theta");
+  var thetaEl = document.getElementById("thetaval");
+  var epsEl = document.getElementById("epsval"), wEl = document.getElementById("wval");
+  var best1 = document.getElementById("bestflag1"), best2 = document.getElementById("bestflag2");
+  var flipFlag = document.getElementById("flipflag");
+  var bx1 = document.getElementById("coordx1"), bx2 = document.getElementById("coordx2");
+  var sbtn = document.getElementById("signbtn");
+  var wu = document.getElementById("wUniform"), wa = document.getElementById("wAfter");
+
+  function predict(p) {
+    var c = state.j === 1 ? p.x : p.y;
+    return c > state.theta ? state.s : -state.s;
+  }
+
+  function render1() {
+    var th = state.theta;
+    var D = state.reweighted ? W_AFTER : W_UNI;
+    // regions
+    var colFor = function (pred) { return pred > 0 ? "var(--blue-soft)" : "var(--crimson-soft)"; };
+    if (state.j === 1) {
+      regionA.setAttribute("x", px0); regionA.setAttribute("y", py0);
+      regionA.setAttribute("width", Math.max(0, sx(th) - px0)); regionA.setAttribute("height", py1 - py0);
+      regionB.setAttribute("x", sx(th)); regionB.setAttribute("y", py0);
+      regionB.setAttribute("width", Math.max(0, px1 - sx(th))); regionB.setAttribute("height", py1 - py0);
+      splitLine.setAttribute("x1", sx(th)); splitLine.setAttribute("x2", sx(th));
+      splitLine.setAttribute("y1", py0); splitLine.setAttribute("y2", py1);
+    } else {
+      regionA.setAttribute("x", px0); regionA.setAttribute("y", sy(th));
+      regionA.setAttribute("width", px1 - px0); regionA.setAttribute("height", Math.max(0, py1 - sy(th)));
+      regionB.setAttribute("x", px0); regionB.setAttribute("y", py0);
+      regionB.setAttribute("width", px1 - px0); regionB.setAttribute("height", Math.max(0, sy(th) - py0));
+      splitLine.setAttribute("x1", px0); splitLine.setAttribute("x2", px1);
+      splitLine.setAttribute("y1", sy(th)); splitLine.setAttribute("y2", sy(th));
+    }
+    regionA.setAttribute("fill", colFor(-state.s));
+    regionB.setAttribute("fill", colFor(state.s));
+
+    var eps = 0;
+    PTS.forEach(function (p, i) {
+      var wrong = predict(p) !== p.lab;
+      if (wrong) eps += D[i];
+      p.ring.setAttribute("opacity", wrong ? 1 : 0);
+      var L = 15 * Math.sqrt(5 * D[i]);
+      var cx = sx(p.x), cy = sy(p.y);
+      p.h.setAttribute("x1", cx - L); p.h.setAttribute("x2", cx + L);
+      p.h.setAttribute("y1", cy); p.h.setAttribute("y2", cy);
+      if (p.v) {
+        p.v.setAttribute("x1", cx); p.v.setAttribute("x2", cx);
+        p.v.setAttribute("y1", cy - L); p.v.setAttribute("y2", cy + L);
+      }
+      p.ring.setAttribute("r", L + 7);
+    });
+    eps = Math.round(eps * 1000) / 1000;
+
+    var coord = state.j === 1 ? "x₁" : "x₂";
+    ruleT1.textContent = "h(x) = " + (state.s > 0 ? "+1" : "−1") + "  if  " + coord + " > " + th.toFixed(2);
+    ruleT2.textContent = "        " + (state.s > 0 ? "−1" : "+1") + "  otherwise";
+    epsT.textContent = "ε = " + eps.toFixed(3);
+    var wtxt;
+    if (eps === 0) wtxt = "∞";
+    else if (eps === 1) wtxt = "−∞";
+    else wtxt = (0.5 * Math.log((1 - eps) / eps)).toFixed(2);
+    wT.textContent = "w = " + wtxt;
+    dT1.textContent = state.reweighted ? "corners: 1/8 each" : "corners: 1/5 each";
+    dT2.textContent = state.reweighted ? "centre: 1/2" : "centre: 1/5";
+
+    epsEl.textContent = eps.toFixed(3);
+    wEl.textContent = wtxt;
+    best1.classList.toggle("on", !state.reweighted && Math.abs(eps - 0.2) < 1e-9);
+    best2.classList.toggle("on", state.reweighted && Math.abs(eps - 0.25) < 1e-9);
+    flipFlag.classList.toggle("on", eps > 0.5);
+  }
+
+  thetaS.addEventListener("input", function () {
+    state.theta = parseFloat(thetaS.value);
+    thetaEl.textContent = state.theta.toFixed(2);
+    render1();
+  });
+  bx1.addEventListener("click", function () {
+    state.j = 1; bx1.classList.add("active"); bx2.classList.remove("active"); render1();
+  });
+  bx2.addEventListener("click", function () {
+    state.j = 2; bx2.classList.add("active"); bx1.classList.remove("active"); render1();
+  });
+  sbtn.addEventListener("click", function () {
+    state.s = -state.s;
+    sbtn.textContent = "sign s = " + (state.s > 0 ? "+1" : "−1");
+    render1();
+  });
+  wu.addEventListener("click", function () {
+    state.reweighted = false; wu.classList.add("active"); wa.classList.remove("active"); render1();
+  });
+  wa.addEventListener("click", function () {
+    state.reweighted = true; wa.classList.add("active"); wu.classList.remove("active"); render1();
+  });
+  render1();
+
+  /* ---------- Figure 2: the three-stump vote ---------- */
+  var svg2 = document.getElementById("vote-svg");
+  var q = { px0: 310, px1: 680, py0: 16, py1: 386 };
+  function qx(v) { return q.px0 + ((v - LO) / (HI - LO)) * (q.px1 - q.px0); }
+  function qy(v) { return q.py1 - ((v - LO) / (HI - LO)) * (q.py1 - q.py0); }
+
+  var bands = [
+    { lo: LO, hi: 0.25, rect: null, lab: null },
+    { lo: 0.25, hi: 0.75, rect: null, lab: null },
+    { lo: 0.75, hi: HI, rect: null, lab: null }
+  ];
+  bands.forEach(function (b) {
+    b.rect = el(svg2, "rect", { x: qx(b.lo), y: q.py0, width: qx(b.hi) - qx(b.lo), height: q.py1 - q.py0, fill: "none" });
+  });
+
+  [0, 0.5, 1].forEach(function (g) {
+    el(svg2, "line", { x1: qx(g), y1: q.py0, x2: qx(g), y2: q.py1, stroke: "var(--grid)", "stroke-width": 1 });
+    el(svg2, "line", { x1: q.px0, y1: qy(g), x2: q.px1, y2: qy(g), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg2, qx(g), q.py1 + 18, g.toFixed(1), { "class": "axis-label", "text-anchor": "middle" });
+    txt(svg2, q.px0 - 8, qy(g) + 4, g.toFixed(1), { "class": "axis-label", "text-anchor": "end" });
+  });
+  [0.25, 0.75].forEach(function (t) {
+    el(svg2, "line", { x1: qx(t), y1: q.py0, x2: qx(t), y2: q.py1, stroke: "var(--muted)", "stroke-width": 1.3, "stroke-dasharray": "5 4" });
+  });
+  el(svg2, "rect", { x: q.px0, y: q.py0, width: q.px1 - q.px0, height: q.py1 - q.py0, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  txt(svg2, q.px1, q.py1 + 34, "x₁", { "class": "axis-label", "text-anchor": "end" });
+
+  bands.forEach(function (b) {
+    b.lab = txt(svg2, (qx(b.lo) + qx(b.hi)) / 2, q.py0 + 24, "", { "font-size": "14", "text-anchor": "middle", "font-weight": "bold" });
+  });
+
+  // left column: the vote terms
+  txt(svg2, 16, 44, "the vote f(x)", { "class": "axis-label" });
+  var voters = [
+    { w: 0.8, desc: "0.8 · h₁   (h₁ ≡ +1)", on: true, h: function () { return 1; } },
+    { w: 1.0, desc: "1.0 · h₂   (−1 if x₁ > 0.25)", on: true, h: function (x) { return x > 0.25 ? -1 : 1; } },
+    { w: 0.9, desc: "0.9 · h₃   (+1 if x₁ > 0.75)", on: true, h: function (x) { return x > 0.75 ? 1 : -1; } }
+  ];
+  voters.forEach(function (v, i) {
+    v.txt = txt(svg2, 16, 74 + 26 * i, "+ " + v.desc, { "font-size": "14.5", fill: "var(--ink)" });
+  });
+  txt(svg2, 16, 190, "training error", { "class": "axis-label" });
+  var errT = txt(svg2, 16, 220, "", { "font-size": "20", "font-weight": "bold", fill: "var(--ink)" });
+
+  PTS.forEach(function (p) {
+    p.ring2 = el(svg2, "circle", { cx: qx(p.x), cy: qy(p.y), fill: "none", stroke: "var(--amber)", "stroke-width": 2.5, r: 15, opacity: 0 });
+    var col = p.lab > 0 ? "var(--blue)" : "var(--crimson)";
+    var L = 8, cx = qx(p.x), cy = qy(p.y);
+    el(svg2, "line", { x1: cx - L, y1: cy, x2: cx + L, y2: cy, stroke: col, "stroke-width": 4.5, "stroke-linecap": "round" });
+    if (p.lab > 0) el(svg2, "line", { x1: cx, y1: cy - L, x2: cx, y2: cy + L, stroke: col, "stroke-width": 4.5, "stroke-linecap": "round" });
+  });
+
+  var btns = [document.getElementById("tg1"), document.getElementById("tg2"), document.getElementById("tg3")];
+  var voteErrEl = document.getElementById("voteerr");
+  var zeroFlag = document.getElementById("zeroflag"), pairFlag = document.getElementById("pairflag");
+
+  function voteAt(x) {
+    var f = 0;
+    voters.forEach(function (v) { if (v.on) f += v.w * v.h(x); });
+    return f;
+  }
+  function render2() {
+    bands.forEach(function (b) {
+      var f = voteAt((b.lo + b.hi) / 2);
+      b.rect.setAttribute("fill", f > 1e-9 ? "var(--blue-soft)" : (f < -1e-9 ? "var(--crimson-soft)" : "none"));
+      b.lab.textContent = "f = " + (f > 0 ? "+" : "") + f.toFixed(1).replace("-", "−");
+      b.lab.setAttribute("fill", f > 1e-9 ? "var(--blue)" : (f < -1e-9 ? "var(--crimson)" : "var(--muted)"));
+    });
+    var errs = 0;
+    PTS.forEach(function (p) {
+      var wrong = p.lab * voteAt(p.x) <= 0;
+      if (wrong) errs++;
+      p.ring2.setAttribute("opacity", wrong ? 1 : 0);
+    });
+    voters.forEach(function (v) { v.txt.setAttribute("opacity", v.on ? 1 : 0.3); });
+    errT.textContent = errs + " / 5";
+    voteErrEl.textContent = errs + " / 5";
+    var nOn = voters.filter(function (v) { return v.on; }).length;
+    zeroFlag.classList.toggle("on", errs === 0);
+    pairFlag.classList.toggle("on", errs > 0 && nOn < 3);
+  }
+  btns.forEach(function (b, i) {
+    b.addEventListener("click", function () {
+      voters[i].on = !voters[i].on;
+      b.classList.toggle("active", voters[i].on);
+      render2();
+    });
+  });
+  render2();
+
+  /* ---------- Figure 3: the exponential clock ---------- */
+  var svg3 = document.getElementById("clock-svg");
+  var m3 = { l: 64, r: 16, t: 18, b: 46 }, W3 = 760, H3 = 360;
+  var TMAX = 5000, LMIN = -8; // y = log10(bound), 0 .. -8
+  function cx3(T) { return m3.l + (T / TMAX) * (W3 - m3.l - m3.r); }
+  function cy3(l10) { return m3.t + (l10 / LMIN) * (H3 - m3.t - m3.b); }
+
+  for (var T = 0; T <= TMAX; T += 1000) {
+    el(svg3, "line", { x1: cx3(T), y1: m3.t, x2: cx3(T), y2: H3 - m3.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg3, cx3(T), H3 - m3.b + 18, T, { "class": "axis-label", "text-anchor": "middle" });
+  }
+  [0, -2, -4, -6, -8].forEach(function (l10) {
+    el(svg3, "line", { x1: m3.l, y1: cy3(l10), x2: W3 - m3.r, y2: cy3(l10), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg3, m3.l - 8, cy3(l10) + 4, l10 === 0 ? "1" : "10" + ({ "-2": "⁻²", "-4": "⁻⁴", "-6": "⁻⁶", "-8": "⁻⁸" })[l10], { "class": "axis-label", "text-anchor": "end" });
+  });
+  txt(svg3, W3 - m3.r, H3 - 8, "rounds T", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg3, m3.l - 44, m3.t - 5, "bound", { "class": "axis-label" });
+
+  var nLine = el(svg3, "line", { stroke: "var(--blue)", "stroke-width": 1.6, "stroke-dasharray": "7 5" });
+  var nLab = txt(svg3, m3.l + 10, 0, "", { fill: "var(--blue)", "font-size": "13" });
+  var bLine = el(svg3, "line", { stroke: "var(--crimson)", "stroke-width": 2.5, "stroke-linecap": "round" });
+  txt(svg3, m3.l + 12, m3.t + 16, "e^(−2γ²T)", { fill: "var(--crimson)", "font-size": "13", "class": "axis-label", style: "fill: var(--crimson);" });
+  var tMark = el(svg3, "line", { stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "4 4", y1: m3.t, y2: H3 - m3.b });
+  var tDot = el(svg3, "circle", { r: 6, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+  var tLab = txt(svg3, 0, H3 - m3.b - 10, "", { fill: "var(--amber)", "font-size": "13", "text-anchor": "middle", style: "fill: var(--amber);" });
+
+  var gamS = document.getElementById("gam"), nexpS = document.getElementById("nexp");
+  var gamEl = document.getElementById("gamval"), nexpEl = document.getElementById("nexpval");
+  var tstarEl = document.getElementById("tstarval");
+  var offFlag = document.getElementById("offflag");
+
+  function render3() {
+    var gam = parseFloat(gamS.value), k = parseInt(nexpS.value, 10);
+    gamEl.textContent = gam.toFixed(3).replace(/0$/, "");
+    nexpEl.textContent = k;
+    var lnN = k * Math.LN10;
+    var slope = -2 * gam * gam * Math.LOG10E; // per round, in log10
+    var Tfloor = LMIN / slope;
+    var Tend = Math.min(TMAX, Tfloor);
+    bLine.setAttribute("x1", cx3(0)); bLine.setAttribute("y1", cy3(0));
+    bLine.setAttribute("x2", cx3(Tend)); bLine.setAttribute("y2", cy3(slope * Tend));
+    var l10n = -k;
+    nLine.setAttribute("x1", m3.l); nLine.setAttribute("x2", W3 - m3.r);
+    nLine.setAttribute("y1", cy3(l10n)); nLine.setAttribute("y2", cy3(l10n));
+    nLab.textContent = "1/n = 10⁻" + ({ 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶" })[k];
+    nLab.setAttribute("y", cy3(l10n) - 8);
+    var Tcross = lnN / (2 * gam * gam);
+    var Tstar = Math.floor(Tcross) + 1;
+    tstarEl.textContent = Tstar;
+    var off = Tcross > TMAX;
+    offFlag.classList.toggle("on", off);
+    var Tm = Math.min(Tcross, TMAX);
+    tMark.setAttribute("x1", cx3(Tm)); tMark.setAttribute("x2", cx3(Tm));
+    tMark.setAttribute("opacity", off ? 0.4 : 1);
+    tDot.setAttribute("cx", cx3(Tm)); tDot.setAttribute("cy", cy3(l10n));
+    tDot.setAttribute("opacity", off ? 0 : 1);
+    tLab.textContent = off ? "" : "T* = " + Tstar;
+    var lx = cx3(Tm);
+    if (lx > W3 - 90) { tLab.setAttribute("text-anchor", "end"); tLab.setAttribute("x", lx - 10); }
+    else { tLab.setAttribute("text-anchor", "middle"); tLab.setAttribute("x", lx); }
+  }
+  gamS.addEventListener("input", render3);
+  nexpS.addEventListener("input", render3);
+  document.getElementById("presheet").addEventListener("click", function () {
+    gamS.value = 0.05; nexpS.value = 6; render3();
+  });
+  render3();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · this sheet: <a href="margins.html">Exercise 2 — boosting past zero</a> · <a href="gradboost.html">Exercise 3 — gradient boosting</a> · <a href="practice8.html">practice problems</a> · last sheet: <a href="coefficients.html">reading coefficients</a> · <a href="bagging.html">bagging &amp; variance</a></footer>
+</body>
+</html>

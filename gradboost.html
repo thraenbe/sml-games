@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛷️</text></svg>">
+<title>Gradient Boosting — Descent in Function Space &amp; the Right Base Learner</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  @media (max-width: 720px) { .fig-grid { grid-template-columns: 1fr; } }
+  .fig-cell svg, .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 8rem; min-width: 7rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+  button.preset.active { border-color: var(--crimson); color: var(--crimson); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+  ol.steps { margin: 0 0 1.05rem; padding-left: 1.3rem; }
+  ol.steps li { margin-bottom: 0.45rem; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Assignment 8 · Exercise 3 · Gradient Boosting</p>
+  <h1>Boosting is gradient descent in function space.</h1>
+  <p class="lede">
+    Strip the reweighting story away and boosting becomes something plainer: minimize a loss, one
+    added function at a time, always stepping in the locally steepest downhill direction. The
+    "downhill direction" is a vector of <em>pseudo-residuals</em> — one number per training point —
+    and the base learner's job is to imitate it with an actual function. That framing makes the
+    sheet's real question crisp: <strong>which base learners make good legs for the descent?</strong>
+    Lines stall after one step; fully grown trees jump straight into memorization; shallow trees
+    are just right.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>the current model f<sub>t−1</sub></span>
+    <span class="chip"><span class="dot a"></span>pseudo-residuals — the downhill signal</span>
+    <span class="chip"><span class="dot c"></span>the growing ensemble fit</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">the algorithm · four steps</span>Stagewise descent</h2>
+  <p>
+    Given data (<var>x</var>₁, <var>y</var>₁), …, (<var>x<sub>n</sub></var>, <var>y<sub>n</sub></var>),
+    a differentiable loss ℓ(<var>y</var>, <var>ŷ</var>) and a class of base learners
+    <var>h<sub>θ</sub></var>, start with <var>f</var>₀ ≡ 0 and repeat:
+  </p>
+  <ol class="steps">
+    <li>compute the <span class="a">pseudo-residuals</span> — the negative gradient of the loss with respect to the current predictions;</li>
+    <li>fit a base learner to them by least squares: θ<sub><var>t</var></sub> &#61; argmin<sub>θ</sub> Σ (<var>r<sub>i</sub></var> − <var>h<sub>θ</sub></var>(<var>x<sub>i</sub></var>))²;</li>
+    <li>pick the step size γ<sub><var>t</var></sub> by line search on the actual loss;</li>
+    <li>update <var>f<sub>t</sub></var> &#61; <var>f</var><sub><var>t</var>−1</sub> + γ<sub><var>t</var></sub><var>h</var><sub>θ<sub><var>t</var></sub></sub>.</li>
+  </ol>
+  <p class="eq boxed"><span class="a"><var>r<sub>i</sub></var></span> &#61; − ∂ℓ(<var>y<sub>i</sub></var>, <var>ŷ</var>) / ∂<var>ŷ</var> &#8202;|<sub><var>ŷ</var> &#61; <var>f</var><sub>t−1</sub>(<var>x<sub>i</sub></var>)</sub></p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">part (a) · what the residuals say</span>Two losses, two messages to the next learner</h2>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">squared loss · ℓ = ½(y − ŷ)²</p>
+      <p>
+        <var>r<sub>i</sub></var> &#61; <var>y<sub>i</sub></var> − <var>f</var><sub>t−1</sub>(<var>x<sub>i</sub></var>) —
+        the current residuals. The base learner is trained to predict <em>by how much, and in which
+        direction,</em> the model misses each point. Big miss, big target.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">absolute loss · ℓ = |y − ŷ|</p>
+      <p>
+        <var>r<sub>i</sub></var> &#61; sign(<var>y<sub>i</sub></var> − <var>f</var><sub>t−1</sub>(<var>x<sub>i</sub></var>)) ∈ {−1, +1} —
+        only the <em>direction</em> of the miss. Every point, outlier or not, speaks at the same
+        volume: robustness by design.
+      </p>
+    </div>
+  </div>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · what the next learner is told to fit — drag the outlier</p>
+    <svg id="pr-svg" viewBox="0 0 760 380" role="img" aria-label="Data points around a fitted line with amber arrows showing the pseudo-residuals; under squared loss the outlier's arrow is huge, under absolute loss all arrows have unit length"></svg>
+    <div class="controls">
+      <button class="preset active" id="lossSq">squared loss</button>
+      <button class="preset" id="lossAbs">absolute loss</button>
+      <label for="outy">outlier's y = <span id="outyval">7.0</span></label>
+      <input type="range" id="outy" min="0" max="8.4" step="0.1" value="7" aria-label="y value of the outlier point">
+    </div>
+    <div class="readouts">
+      <span>outlier's pseudo-residual r = <b id="routval">–</b></span>
+      <span class="flag" id="shoutflag">the outlier dominates what the next learner fits</span>
+      <span class="flag amber" id="quietflag">capped at ±1 — the outlier is just one voice among n</span>
+    </div>
+  </div>
+  <figcaption>
+    The blue line is the current model <var>f</var><sub>t−1</sub>; amber arrows are the
+    pseudo-residuals <var>r<sub>i</sub></var>, the target values handed to the next base learner.
+    Switch losses and watch the crimson outlier: under squared loss its arrow (and hence its pull on
+    the next fit) grows with the miss; under absolute loss every arrow has length one, so a wild
+    point steers the descent no harder than a well-behaved one.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">part (b) · why fit a learner at all?</span>The raw gradient knows nothing between the points</h2>
+  <p>
+    Why not skip step (ii) and update the predictions directly,
+    <var>f<sub>t</sub></var>(<var>x<sub>i</sub></var>) &#61; <var>f</var><sub>t−1</sub>(<var>x<sub>i</sub></var>) + <var>r<sub>i</sub></var>?
+    Because the gradient (<var>r</var>₁, …, <var>r<sub>n</sub></var>) is only defined <em>at the n
+    training points</em>. For the squared loss that update would just write the training labels into
+    the model after one step — training loss zero, and no opinion whatsoever at unseen
+    <var>x</var>. Fitting a base learner means choosing the function in the class
+    {<var>h<sub>θ</sub></var>} closest to the negative gradient — an <em>approximate</em> gradient
+    step within a family that is defined everywhere and can generalize. The base class is the
+    channel through which the gradient signal must pass; what survives depends on the class.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">parts (c), (d) &amp; (e) · choosing the legs</span>Lines stall, deep trees memorize, stumps descend</h2>
+  <p>
+    <strong>(c) Linear base learners buy nothing.</strong> Take squared loss and OLS-fitted linear
+    base learners. Round 1: the pseudo-residuals are <var>y</var> itself, so the first step lands
+    exactly on the OLS prediction <var>Py</var> (the projection of <var>y</var> onto the column
+    space <var>S</var>, with step size γ₁ = 1 from the line search). Round 2: the new residual
+    <var>y</var> − <var>Py</var> is <em>orthogonal</em> to <var>S</var> — the normal equations from
+    the very first sheet — so the best linear fit to it is the zero function, and nothing ever
+    moves again:
+  </p>
+  <p class="eq boxed"><var>X</var><sup>T</sup>(<var>y</var> − <var>Py</var>) &#61; 0 &nbsp;⟹&nbsp; <span class="c"><var>f<sub>t</sub></var> &#61; <var>f</var>₁ &#61; OLS, for all <var>t</var> ≥ 2</span></p>
+  <p>
+    Boosting linear models converges after one round to plain OLS. The failure is structural: every
+    iteration projects onto the <em>same fixed linear subspace</em>, and once the residual is
+    orthogonal to it, the descent is blind. <strong>(d) Tree stumps escape</strong> because they do
+    not form a linear subspace — each round may pick a different split and thereby open a new
+    direction in ℝ<sup><var>n</var></sup>; the residual after one stump is generally not orthogonal
+    to all other stumps, so the loss keeps falling and the reachable span grows with <var>t</var>.
+    <strong>(e) Fully grown trees fail the other way:</strong> with distinct inputs a deep enough
+    tree puts every point in its own leaf, fits the pseudo-residuals perfectly, and ends boosting
+    after a single round — the tree version of the direct gradient step from (b), memorization
+    included. Shallow trees make a small correction per round, so complexity builds up gradually.
+    Race all three below.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · the base-learner race — ensemble fit <span class="tn">(left)</span> and training loss <span class="tn">(right)</span></p>
+    <div class="fig-grid">
+      <div class="fig-cell"><svg id="fit-svg" viewBox="0 0 440 340" role="img" aria-label="Data drawn from a wavy function with the boosted ensemble fit after t rounds; stumps refine into a staircase, the linear fit never changes after round one, the deep tree interpolates every point immediately"></svg></div>
+      <div class="fig-cell"><svg id="loss-svg" viewBox="0 0 440 340" role="img" aria-label="Training mean squared error against the boosting round for the chosen base learner"></svg></div>
+    </div>
+    <div class="controls">
+      <button class="preset" id="blLin">linear (OLS)</button>
+      <button class="preset active" id="blStump">stump — depth 1</button>
+      <button class="preset" id="blTree">fully grown tree</button>
+      <label for="round">rounds t = <span id="roundval">6</span></label>
+      <input type="range" id="round" min="0" max="20" step="1" value="6" aria-label="number of boosting rounds">
+    </div>
+    <div class="readouts">
+      <span>training MSE = <b id="mseval">–</b></span>
+      <span id="blnote" style="color: var(--ink-2);"></span>
+    </div>
+  </div>
+  <figcaption>
+    A live run on 32 points from <var>y</var> = sin 2<var>x</var> + 0.6<var>x</var> + noise (dashed:
+    the noiseless truth). Linear: the loss curve is a step that lands on OLS at
+    <var>t</var> = 1 and flatlines — rounds 2, 3, … fit the zero function. Stumps: each round adds
+    one split's worth of structure; the staircase sharpens and the loss keeps easing toward the
+    noise floor. Fully grown tree: at <var>t</var> = 1 the fit threads through every data point —
+    training MSE 0.00, noise and all — which is exactly why nobody boosts deep trees.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> Gradient boosting reframes "combine weak learners" as
+      plain optimization: the loss defines a landscape over functions, the pseudo-residuals are the
+      local downhill direction, and the base class decides which part of that direction the model
+      can actually follow. That's the design rule the sheet is teaching: pick base learners rich
+      enough that new residuals keep opening new directions (not a fixed linear subspace), yet weak
+      enough that one round can't swallow the residuals whole (not an interpolating tree). AdaBoost
+      itself is this picture with the exponential loss — its <var>w<sub>t</sub></var> is exactly the
+      line search of step (iii) — which ties the whole sheet together: <a href="adaboost.html">the
+      reweighting mechanics</a> are the bookkeeping, and <a href="margins.html">the ever-growing
+      margins</a> are what "keep descending after zero training error" looks like from the outside.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  /* ---------- Figure 1: pseudo-residual arrows ---------- */
+  var svg1 = document.getElementById("pr-svg");
+  var m1 = { l: 50, r: 16, t: 16, b: 44 }, W1 = 760, H1 = 380;
+  var XLO = 0, XHI = 5, YLO = -0.5, YHI = 8.5;
+  function ax(v) { return m1.l + ((v - XLO) / (XHI - XLO)) * (W1 - m1.l - m1.r); }
+  function ay(v) { return H1 - m1.b - ((v - YLO) / (YHI - YLO)) * (H1 - m1.t - m1.b); }
+
+  var defs1 = el(svg1, "defs", {});
+  var mk = el(defs1, "marker", {
+    id: "arrA", viewBox: "0 0 10 10", refX: 7, refY: 5,
+    markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse"
+  });
+  el(mk, "path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--amber)" });
+
+  for (var g = 0; g <= 5; g++) {
+    el(svg1, "line", { x1: ax(g), y1: m1.t, x2: ax(g), y2: H1 - m1.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg1, ax(g), H1 - m1.b + 18, g, { "class": "axis-label", "text-anchor": "middle" });
+  }
+  for (g = 0; g <= 8; g += 2) {
+    el(svg1, "line", { x1: m1.l, y1: ay(g), x2: W1 - m1.r, y2: ay(g), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg1, m1.l - 8, ay(g) + 4, g, { "class": "axis-label", "text-anchor": "end" });
+  }
+  txt(svg1, W1 - m1.r, H1 - 8, "x", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg1, m1.l - 30, m1.t - 2, "y", { "class": "axis-label" });
+
+  function fcur(x) { return 0.8 * x + 0.5; }
+  el(svg1, "line", { x1: ax(XLO), y1: ay(fcur(XLO)), x2: ax(XHI), y2: ay(fcur(XHI)), stroke: "var(--blue)", "stroke-width": 2.2 });
+  txt(svg1, ax(0.15), ay(fcur(0.15)) + 26, "f (current model)", { fill: "var(--blue)", "font-size": "13", style: "fill: var(--blue);" });
+
+  var BASE = [
+    { x: 0.35, dy: 0.5 }, { x: 0.8, dy: -0.4 }, { x: 1.2, dy: 0.6 }, { x: 1.6, dy: -0.6 },
+    { x: 2.0, dy: 0.35 }, { x: 2.4, dy: -0.5 }, { x: 2.8, dy: 0.55 }, { x: 3.2, dy: -0.35 },
+    { x: 3.6, dy: 0.45 }, { x: 4.2, dy: -0.55 }, { x: 4.6, dy: 0.3 }
+  ];
+  BASE.forEach(function (p) {
+    p.y = fcur(p.x) + p.dy;
+    p.arrow = el(svg1, "line", { stroke: "var(--amber)", "stroke-width": 2.4, "marker-end": "url(#arrA)", "stroke-linecap": "round" });
+  });
+  BASE.forEach(function (p) {
+    el(svg1, "circle", { cx: ax(p.x), cy: ay(p.y), r: 4.5, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 1.2 });
+  });
+  var OUT = { x: 3.9 };
+  OUT.arrow = el(svg1, "line", { stroke: "var(--amber)", "stroke-width": 2.4, "marker-end": "url(#arrA)", "stroke-linecap": "round" });
+  OUT.dot = el(svg1, "circle", { cx: ax(OUT.x), r: 5.5, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 1.2 });
+  txt(svg1, ax(OUT.x) + 12, ay(7) - 10, "the outlier", { fill: "var(--crimson)", "font-size": "13", style: "fill: var(--crimson);" });
+
+  var lossSqB = document.getElementById("lossSq"), lossAbsB = document.getElementById("lossAbs");
+  var outS = document.getElementById("outy"), outEl = document.getElementById("outyval");
+  var routEl = document.getElementById("routval");
+  var shoutFlag = document.getElementById("shoutflag"), quietFlag = document.getElementById("quietflag");
+  var lossMode = "sq";
+
+  function setArrow(a, x, resid) {
+    var y0 = fcur(x);
+    var tip = lossMode === "sq" ? y0 + resid : y0 + Math.sign(resid) * 0.55;
+    a.setAttribute("x1", ax(x)); a.setAttribute("y1", ay(y0));
+    a.setAttribute("x2", ax(x)); a.setAttribute("y2", ay(tip));
+  }
+  function render1() {
+    var oy = parseFloat(outS.value);
+    outEl.textContent = oy.toFixed(1);
+    OUT.y = oy;
+    OUT.dot.setAttribute("cy", ay(oy));
+    BASE.forEach(function (p) { setArrow(p.arrow, p.x, p.y - fcur(p.x)); });
+    var rout = oy - fcur(OUT.x);
+    setArrow(OUT.arrow, OUT.x, rout);
+    var shown = lossMode === "sq" ? rout : Math.sign(rout);
+    routEl.textContent = (shown >= 0 ? "+" : "") + shown.toFixed(2);
+    shoutFlag.classList.toggle("on", lossMode === "sq" && Math.abs(rout) > 1.8);
+    quietFlag.classList.toggle("on", lossMode === "abs");
+  }
+  lossSqB.addEventListener("click", function () {
+    lossMode = "sq"; lossSqB.classList.add("active"); lossAbsB.classList.remove("active"); render1();
+  });
+  lossAbsB.addEventListener("click", function () {
+    lossMode = "abs"; lossAbsB.classList.add("active"); lossSqB.classList.remove("active"); render1();
+  });
+  outS.addEventListener("input", render1);
+  render1();
+
+  /* ---------- Figure 2: the base-learner race ---------- */
+  var seed = 42 >>> 0;
+  function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  function gauss() {
+    var u = Math.max(rnd(), 1e-12), v = rnd();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  var N = 32, TMAXR = 20;
+  function ftrue(x) { return Math.sin(2 * x) + 0.6 * x; }
+  var xs = [], ys = [];
+  for (var i = 0; i < N; i++) xs.push(0.06 + (2.88 * i) / (N - 1) + (rnd() - 0.5) * 0.05);
+  xs.sort(function (a, b) { return a - b; });
+  for (i = 0; i < N; i++) ys.push(ftrue(xs[i]) + 0.35 * gauss());
+
+  var GX = [];
+  for (i = 0; i <= 150; i++) GX.push((3 * i) / 150);
+
+  function mseOf(pred) {
+    var s = 0;
+    for (var i = 0; i < N; i++) s += (ys[i] - pred[i]) * (ys[i] - pred[i]);
+    return s / N;
+  }
+
+  // --- stump boosting ---
+  var stumpCurves = [], stumpMSE = [];
+  (function () {
+    var pred = new Array(N).fill(0), curve = new Array(GX.length).fill(0);
+    stumpCurves.push(curve.slice());
+    stumpMSE.push(mseOf(pred));
+    for (var t = 0; t < TMAXR; t++) {
+      var r = [];
+      for (var i = 0; i < N; i++) r.push(ys[i] - pred[i]);
+      var best = { sse: Infinity, thr: 0, mL: 0, mR: 0 };
+      for (var k = 0; k < N - 1; k++) {
+        var thr = (xs[k] + xs[k + 1]) / 2;
+        var sL = 0, nL = k + 1, sR = 0, nR = N - nL;
+        for (i = 0; i <= k; i++) sL += r[i];
+        for (i = k + 1; i < N; i++) sR += r[i];
+        var mL = sL / nL, mR = sR / nR, sse = 0;
+        for (i = 0; i < N; i++) {
+          var h = xs[i] <= thr ? mL : mR;
+          sse += (r[i] - h) * (r[i] - h);
+        }
+        if (sse < best.sse) best = { sse: sse, thr: thr, mL: mL, mR: mR };
+      }
+      for (i = 0; i < N; i++) pred[i] += xs[i] <= best.thr ? best.mL : best.mR;
+      for (i = 0; i < GX.length; i++) curve[i] += GX[i] <= best.thr ? best.mL : best.mR;
+      stumpCurves.push(curve.slice());
+      stumpMSE.push(mseOf(pred));
+    }
+  })();
+
+  // --- linear (OLS) ---
+  var linCurve, linMSE;
+  (function () {
+    var mx = 0, myv = 0;
+    for (var i = 0; i < N; i++) { mx += xs[i] / N; myv += ys[i] / N; }
+    var sxy = 0, sxx = 0;
+    for (i = 0; i < N; i++) { sxy += (xs[i] - mx) * (ys[i] - myv); sxx += (xs[i] - mx) * (xs[i] - mx); }
+    var b1 = sxy / sxx, b0 = myv - b1 * mx;
+    linCurve = GX.map(function (x) { return b0 + b1 * x; });
+    var pred = xs.map(function (x) { return b0 + b1 * x; });
+    linMSE = mseOf(pred);
+  })();
+
+  // --- fully grown tree: interpolating staircase ---
+  var treeCurve = GX.map(function (x) {
+    var lo = 0, hi = N - 1;
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[N - 1]) return ys[N - 1];
+    for (var i = 0; i < N - 1; i++) {
+      if (x >= xs[i] && x < xs[i + 1]) return x - xs[i] < xs[i + 1] - x ? ys[i] : ys[i + 1];
+    }
+    return ys[N - 1];
+  });
+
+  var m0 = mseOf(new Array(N).fill(0));
+
+  // --- left panel: fit ---
+  var fsvg = document.getElementById("fit-svg");
+  var mf = { l: 42, r: 12, t: 14, b: 38 }, WF = 440, HF = 340;
+  var FYLO = -1.1, FYHI = 2.7;
+  function fx(v) { return mf.l + (v / 3) * (WF - mf.l - mf.r); }
+  function fy(v) { return HF - mf.b - ((v - FYLO) / (FYHI - FYLO)) * (HF - mf.t - mf.b); }
+
+  [0, 1, 2, 3].forEach(function (v) {
+    el(fsvg, "line", { x1: fx(v), y1: mf.t, x2: fx(v), y2: HF - mf.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(fsvg, fx(v), HF - mf.b + 16, v, { "class": "axis-label", "text-anchor": "middle" });
+  });
+  [-1, 0, 1, 2].forEach(function (v) {
+    el(fsvg, "line", { x1: mf.l, y1: fy(v), x2: WF - mf.r, y2: fy(v), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(fsvg, mf.l - 6, fy(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  txt(fsvg, WF - mf.r, HF - 6, "x", { "class": "axis-label", "text-anchor": "end" });
+
+  var td = "";
+  GX.forEach(function (x, i) { td += (i ? "L" : "M") + fx(x).toFixed(1) + "," + fy(ftrue(x)).toFixed(1); });
+  el(fsvg, "path", { d: td, fill: "none", stroke: "var(--muted)", "stroke-width": 1.5, "stroke-dasharray": "6 5" });
+  txt(fsvg, fx(0.08), fy(-0.85), "truth (dashed)", { fill: "var(--muted)", "font-size": "12.5" });
+
+  for (i = 0; i < N; i++) {
+    el(fsvg, "circle", { cx: fx(xs[i]), cy: fy(ys[i]), r: 3.4, fill: "var(--ink)", stroke: "var(--card)", "stroke-width": 1 });
+  }
+  var fitPath = el(fsvg, "path", { d: "", fill: "none", stroke: "var(--crimson)", "stroke-width": 2.4, "stroke-linejoin": "round" });
+
+  // --- right panel: loss curve ---
+  var lsvg = document.getElementById("loss-svg");
+  var ml = { l: 46, r: 12, t: 14, b: 38 }, WL = 440, HL = 340;
+  var LYMAX = Math.ceil(m0 * 1.15 * 10) / 10;
+  function lx(t) { return ml.l + (t / TMAXR) * (WL - ml.l - ml.r); }
+  function ly(v) { return ml.t + (1 - v / LYMAX) * (HL - ml.t - ml.b); }
+
+  for (var tt = 0; tt <= TMAXR; tt += 5) {
+    el(lsvg, "line", { x1: lx(tt), y1: ml.t, x2: lx(tt), y2: HL - ml.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(lsvg, lx(tt), HL - ml.b + 16, tt, { "class": "axis-label", "text-anchor": "middle" });
+  }
+  var lstep = LYMAX > 1 ? 0.5 : 0.25;
+  for (var vv = 0; vv <= LYMAX + 1e-9; vv += lstep) {
+    el(lsvg, "line", { x1: ml.l, y1: ly(vv), x2: WL - ml.r, y2: ly(vv), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(lsvg, ml.l - 6, ly(vv) + 4, vv.toFixed(2), { "class": "axis-label", "text-anchor": "end" });
+  }
+  txt(lsvg, WL - ml.r, HL - 6, "round t", { "class": "axis-label", "text-anchor": "end" });
+  txt(lsvg, ml.l - 34, ml.t - 2, "train MSE", { "class": "axis-label" });
+
+  var lossPath = el(lsvg, "path", { d: "", fill: "none", stroke: "var(--crimson)", "stroke-width": 2.2 });
+  var lMark = el(lsvg, "line", { stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "4 4", y1: ml.t, y2: HL - ml.b });
+  var lDot = el(lsvg, "circle", { r: 5.5, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+
+  var learner = "stump";
+  var blLin = document.getElementById("blLin"), blStump = document.getElementById("blStump"), blTree = document.getElementById("blTree");
+  var roundS = document.getElementById("round"), roundEl = document.getElementById("roundval");
+  var mseEl = document.getElementById("mseval"), noteEl = document.getElementById("blnote");
+
+  function mseAt(t) {
+    if (learner === "stump") return stumpMSE[t];
+    if (learner === "lin") return t === 0 ? m0 : linMSE;
+    return t === 0 ? m0 : 0;
+  }
+  function curveAt(t) {
+    if (learner === "stump") return stumpCurves[t];
+    if (learner === "lin") return t === 0 ? GX.map(function () { return 0; }) : linCurve;
+    return t === 0 ? GX.map(function () { return 0; }) : treeCurve;
+  }
+  var NOTES = {
+    lin: "flatlined after t = 1 — the residual is orthogonal to every line",
+    stump: "still descending — each split opens a new direction",
+    tree: "training MSE 0 after one round — memorized, noise and all"
+  };
+  function render2() {
+    var t = parseInt(roundS.value, 10);
+    roundEl.textContent = t;
+    var cv = curveAt(t);
+    var d = "";
+    if (learner === "lin" || (learner === "stump" && t === 0)) {
+      d = "M" + fx(GX[0]).toFixed(1) + "," + fy(Math.max(FYLO, Math.min(FYHI, cv[0]))).toFixed(1) +
+          "L" + fx(GX[GX.length - 1]).toFixed(1) + "," + fy(Math.max(FYLO, Math.min(FYHI, cv[cv.length - 1]))).toFixed(1);
+    } else {
+      GX.forEach(function (x, i) {
+        var v = Math.max(FYLO, Math.min(FYHI, cv[i]));
+        d += (i ? "L" : "M") + fx(x).toFixed(1) + "," + fy(v).toFixed(1);
+      });
+    }
+    fitPath.setAttribute("d", d);
+    var ld = "";
+    for (var s = 0; s <= TMAXR; s++) ld += (s ? "L" : "M") + lx(s).toFixed(1) + "," + ly(mseAt(s)).toFixed(1);
+    lossPath.setAttribute("d", ld);
+    lMark.setAttribute("x1", lx(t)); lMark.setAttribute("x2", lx(t));
+    lDot.setAttribute("cx", lx(t)); lDot.setAttribute("cy", ly(mseAt(t)));
+    mseEl.textContent = mseAt(t).toFixed(3);
+    noteEl.textContent = t === 0 ? "t = 0: the model is f ≡ 0 — slide right" : NOTES[learner];
+  }
+  function pick(name, btn) {
+    learner = name;
+    [blLin, blStump, blTree].forEach(function (b) { b.classList.remove("active"); });
+    btn.classList.add("active");
+    render2();
+  }
+  blLin.addEventListener("click", function () { pick("lin", blLin); });
+  blStump.addEventListener("click", function () { pick("stump", blStump); });
+  blTree.addEventListener("click", function () { pick("tree", blTree); });
+  roundS.addEventListener("input", render2);
+  render2();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · this sheet: <a href="adaboost.html">Exercise 1 — AdaBoost by hand</a> · <a href="margins.html">Exercise 2 — boosting past zero</a> · <a href="practice8.html">practice problems</a> · last sheet: <a href="coefficients.html">reading coefficients</a> · <a href="bagging.html">bagging &amp; variance</a></footer>
+</body>
+</html>

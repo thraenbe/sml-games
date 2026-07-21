@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+<title>Assignment 8 Practice — One Algorithm, Twelve Small Problems</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .task {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem 0.9rem;
+    margin: 1.1rem 0;
+  }
+  .task .tag {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.55rem;
+  }
+  .task .tag .no { color: var(--crimson); }
+  .task .q { margin: 0 0 0.4rem; }
+  .task .eq {
+    font-size: 1.02rem; text-align: center; padding: 0.5rem 0.6rem; margin: 0.6rem 0;
+    overflow-x: auto; white-space: nowrap;
+  }
+  details.sol {
+    border-top: 1px dashed var(--line);
+    margin-top: 0.85rem;
+    padding: 0.6rem 0 0.25rem;
+  }
+  details.sol summary {
+    cursor: pointer;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue);
+    user-select: none;
+  }
+  details.sol summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  details.sol[open] summary { color: var(--muted); }
+  .sol-body { padding-top: 0.55rem; font-size: 0.96rem; color: var(--ink); }
+  .sol-body p { margin: 0 0 0.7rem; }
+  .sol-body p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Assignment 8 · Practice · Shorter Tasks, With Solutions</p>
+  <h1>One algorithm, twelve small problems.</h1>
+  <p class="lede">
+    Assignment 8 is one idea seen through three lenses. The idea: build a strong model by adding
+    one <em>weak</em> correction per round. Lens one is mechanical — reweight the data so mistakes
+    get louder (AdaBoost, Exercise 1). Lens two is statistical — even after the training error hits
+    zero, more rounds keep growing the <em>margins</em>, so the test error keeps falling
+    (Exercise 2). Lens three is optimizational — the whole procedure is gradient descent in
+    function space, and the base learner class decides which directions the descent can follow
+    (Exercise 3). The problems below are smaller than the sheet's; try each before opening the
+    solution.
+  </p>
+</header>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">The map of the sheet — one recipe, three lenses</p>
+    <svg id="map-svg" viewBox="0 0 760 258" role="img" aria-label="A diagram: the boosting recipe at the top, with three arrows down to its three readings — reweighting mechanics, margin growth, and gradient descent in function space"></svg>
+  </div>
+  <figcaption>
+    All three lenses look at the same update <var>f<sub>t</sub></var> = <var>f</var><sub>t−1</sub> + <var>w<sub>t</sub>h<sub>t</sub></var>.
+    The weights are the bookkeeping of an exponential loss; the margins are why minimizing it keeps
+    helping after zero training error; and the loss-descent view explains which weak learners are
+    worth boosting at all.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Warm-ups · Exercise 1 (and the voluntary Exercise 4)</span>A. The reweighting machine</h2>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 1</span><span>vote weight</span><span>compute</span></p>
+    <p class="q">
+      A weak classifier has weighted error ε = 1/5. What vote weight
+      <var>w</var> = ½ ln((1 − ε)/ε) does AdaBoost give it? And if instead ε = 1/2?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          ε = 1/5: <var>w</var> = ½ ln 4 = ln 2 ≈ <strong>0.69</strong>. ε = 1/2:
+          <var>w</var> = ½ ln 1 = <strong>0</strong> — a coin-flip classifier gets no say in the
+          vote at all.
+        </p>
+        <p>
+          This is exactly the round-1 situation of the sheet's five-point square: the constant rule
+          +1 errs only on the centre (ε₁ = 1/5) and enters the vote with weight ln 2.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 2</span><span>the weight update</span><span>compute</span></p>
+    <p class="q">
+      Five points with uniform weights 1/5; classifier <var>h</var>₁ (with ε₁ = 1/5,
+      <var>w</var>₁ = ln 2) gets four right and one wrong. Compute the new weights
+      <var>D<sub>i</sub></var><sup>(2)</sup>. What is the total weight of the misclassified points
+      afterwards?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Multiply by <var>e</var><sup>±<var>w</var>₁</sup>: the wrong point becomes
+          (1/5)·2 = 2/5, each correct point (1/5)·½ = 1/10. Normalizer:
+          2/5 + 4·(1/10) = 4/5. New weights: wrong point <strong>1/2</strong>, correct points
+          <strong>1/8</strong> each.
+        </p>
+        <p>
+          Misclassified weight afterwards: exactly <strong>1/2</strong> — and that is a theorem,
+          not luck: AdaBoost's choice of <var>w<sub>t</sub></var> always reduces the round's own
+          classifier to random guessing on the new weights, which is why the next round must find
+          something new.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 3</span><span>the five-point square</span><span>explain</span></p>
+    <p class="q">
+      Four positive points at the corners of the unit square, one negative at the centre. Show that
+      every genuine threshold stump has weighted error ≥ 2/5 in round 1 — so the best "stump" is
+      the constant classifier.
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          A stump labels the two sides of one axis-aligned line. Whichever side predicts −1
+          contains at least two of the four corners (any vertical or horizontal line leaves ≥ 2
+          corners on each side, and if the −1 side had fewer than two corners it would have to be a
+          thin outer slice — which then misses the centre, so flipping the sign doesn't help
+          either). Two corners at weight 1/5 each give ε ≥ 2/5.
+        </p>
+        <p>
+          The constant rule +1 errs only on the centre: ε = 1/5 &lt; 2/5. Boosting's first "weak
+          learner" here doesn't split at all.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 4</span><span>useless or not?</span><span>true / false</span></p>
+    <p class="q">
+      True or false? "A weak classifier with weighted error ε<sub>t</sub> = 0.9 is useless to
+      AdaBoost."
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          <strong>False.</strong> Its weight <var>w<sub>t</sub></var> = ½ ln(0.1/0.9) &lt; 0 — the
+          vote adds it with a <em>negative</em> coefficient, i.e. effectively uses the flipped
+          classifier −<var>h<sub>t</sub></var>, which has error 0.1. A classifier that is reliably
+          wrong is just as informative as one that is reliably right.
+        </p>
+        <p>
+          The only useless classifiers are the ones with ε<sub>t</sub> = ½ exactly — random-guessing
+          level — which is precisely what the weak-learning assumption ε<sub>t</sub> ≤ ½ − γ rules
+          out.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 5</span><span>the stuck case</span><span>explain</span></p>
+    <p class="q">
+      Suppose in round <var>t</var> the weak learner returns a classifier with
+      ε<sub>t</sub> = ½ exactly. What happens in round <var>t</var>, and in all later rounds?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          <var>w<sub>t</sub></var> = 0, so the round contributes nothing to the vote — and since
+          the update factors are <var>e</var><sup>0</sup> = 1, the weights don't change either:
+          <var>D</var><sup>(t+1)</sup> = <var>D</var><sup>(t)</sup>. If the weak learner is
+          deterministic it now faces the identical problem and returns the identical answer —
+          AdaBoost repeats the same non-step forever.
+        </p>
+        <p>
+          That is why the weak-learning assumption demands a fixed margin below ½: not "better than
+          useless once", but bounded away from a coin flip in <em>every</em> round, on
+          <em>every</em> reweighting.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 6</span><span>the optimal weight</span><span>compute</span></p>
+    <p class="q">
+      Adding round <var>t</var>'s classifier with an arbitrary weight <var>w</var> multiplies the
+      average exponential loss by
+      <var>N<sub>t</sub></var>(<var>w</var>) = ε<sub>t</sub><var>e<sup>w</sup></var> + (1 − ε<sub>t</sub>)<var>e</var><sup>−<var>w</var></sup>.
+      Where is the minimum, and what is its value for ε<sub>t</sub> = 0.15?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Setting <var>N<sub>t</sub></var>′(<var>w</var>) = ε<sub>t</sub><var>e<sup>w</sup></var> − (1 − ε<sub>t</sub>)<var>e</var><sup>−<var>w</var></sup> = 0
+          gives <var>e</var><sup>2<var>w</var></sup> = (1 − ε<sub>t</sub>)/ε<sub>t</sub>, i.e.
+          exactly AdaBoost's <var>w<sub>t</sub></var> = ½ ln((1 − ε<sub>t</sub>)/ε<sub>t</sub>)
+          (a minimum: <var>N<sub>t</sub></var>″ &gt; 0). Plugging in:
+          <var>N<sub>t</sub></var>(<var>w<sub>t</sub></var>) = 2√(ε<sub>t</sub>(1 − ε<sub>t</sub>)).
+        </p>
+        <p>
+          For ε<sub>t</sub> = 0.15: 2√(0.15 · 0.85) = 2√0.1275 ≈ <strong>0.71</strong> — each such
+          round multiplies the surrogate training loss by 0.71. AdaBoost's weight formula is not a
+          convention; it is the exact line-search minimizer of the exponential loss.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 7</span><span>the exponential clock</span><span>compute</span></p>
+    <p class="q">
+      With edge γ = 0.05 (every round's error ≤ 0.45), the training error after <var>T</var> rounds
+      is at most <var>e</var><sup>−2γ²<var>T</var></sup>. How many rounds guarantee zero training
+      error on <var>n</var> = 10⁶ points?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Training error takes values 0, 1/<var>n</var>, 2/<var>n</var>, …, so it is exactly 0 once
+          the bound drops below 1/<var>n</var>:
+          <var>e</var><sup>−2γ²<var>T</var></sup> &lt; 1/<var>n</var> ⟺
+          <var>T</var> &gt; ln <var>n</var> / 2γ² = 6 ln 10 / 0.005 ≈ 2763.1, so
+          <strong><var>T</var> = 2764</strong> rounds suffice.
+        </p>
+        <p>
+          Even with a barely-better-than-random learner, the number of rounds grows only
+          <em>logarithmically</em> in the number of training points — a million points cost only a
+          few thousand rounds.
+        </p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Warm-ups · Exercise 2</span>B. Past zero: margins</h2>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 8</span><span>boosting past zero</span><span>true / false</span></p>
+    <p class="q">
+      True or false? "Once AdaBoost's training error is 0, further rounds can only overfit — the
+      test error cannot keep improving."
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          <strong>False</strong> — and the sheet's experiment refutes it by a factor of five: test
+          error ≈ 0.022 when the training error first hits 0 (round 7), ≈ 0.004 at round 500. Zero
+          training error only says every margin <var>y<sub>i</sub>f</var>(<var>x<sub>i</sub></var>)
+          is positive; further rounds keep <em>growing</em> the margins, pushing the boundary away
+          from the points and into the gap between the classes.
+        </p>
+        <p>
+          The margin-based generalization bound does not depend on the number of rounds
+          <var>T</var> — larger margins tighten it even when the 0-1 training error can't move.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 9</span><span>normalized margins</span><span>compute</span></p>
+    <p class="q">
+      At round 10 an ensemble has Σ<var>w<sub>s</sub></var> = 10 and a training point has
+      <var>y<sub>i</sub>f</var>(<var>x<sub>i</sub></var>) = 2. At round 100,
+      Σ<var>w<sub>s</sub></var> = 60 and the same point has
+      <var>y<sub>i</sub>f</var>(<var>x<sub>i</sub></var>) = 27. Raw score up, but did the vote get
+      more confident on this point? Why normalize at all?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Normalized margins: 2/10 = <strong>0.20</strong> versus 27/60 = <strong>0.45</strong> —
+          yes, genuinely more confident: the point went from "51%-style majority" toward a decisive
+          vote.
+        </p>
+        <p>
+          The raw <var>f</var> inflates mechanically because every round adds another
+          <var>w<sub>t</sub>h<sub>t</sub></var> with <var>w<sub>t</sub></var> &gt; 0 — in the
+          sheet's run max |<var>f<sub>t</sub></var>| grows from ≈ 6 to ≈ 266 with no meaning by
+          itself. Only the margin relative to the total vote mass
+          Σ<var>w<sub>s</sub></var> ∈ [−1, 1] compares rounds honestly.
+        </p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Warm-ups · Exercise 3</span>C. Descent in function space</h2>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 10</span><span>pseudo-residuals</span><span>compute</span></p>
+    <p class="q">
+      Current predictions <var>f</var>(<var>x<sub>i</sub></var>) = (1, 2, 0), targets
+      <var>y<sub>i</sub></var> = (1.5, −1, 0.2). Compute the pseudo-residuals for the squared loss
+      ½(<var>y</var> − <var>ŷ</var>)² and for the absolute loss |<var>y</var> − <var>ŷ</var>|.
+      Which loss would you pick if the second point might be a corrupted label?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Squared: <var>r<sub>i</sub></var> = <var>y<sub>i</sub></var> − <var>f</var>(<var>x<sub>i</sub></var>) =
+          <strong>(0.5, −3, 0.2)</strong>. Absolute: <var>r<sub>i</sub></var> = sign(<var>y<sub>i</sub></var> − <var>f</var>(<var>x<sub>i</sub></var>)) =
+          <strong>(+1, −1, +1)</strong>.
+        </p>
+        <p>
+          Under squared loss the suspect point shouts six times louder than anyone else and the next
+          base learner will bend toward it; under absolute loss it is one vote among three. With
+          possible label corruption, the absolute loss is the robust choice.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 11</span><span>base learners</span><span>explain</span></p>
+    <p class="q">
+      With squared loss, why does gradient boosting with OLS-fitted <em>linear</em> base learners
+      stop making progress after round 1 — and why doesn't the same argument kill tree stumps?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          Round 1 lands on the OLS prediction <var>Py</var> — the orthogonal projection of
+          <var>y</var> onto the column space <var>S</var>. The new residual
+          <var>y</var> − <var>Py</var> is orthogonal to <var>S</var> (the normal equations), so the
+          best linear fit to it is the zero function: every later round adds nothing. The descent
+          projects onto the <em>same fixed subspace</em> forever.
+        </p>
+        <p>
+          Stumps don't form a linear subspace: each round may pick a new split and hence a genuinely
+          new direction in ℝ<sup><var>n</var></sup>, and a residual orthogonal to one stump is not
+          orthogonal to all of them. The reachable span grows with <var>t</var>, so the training
+          loss keeps falling.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="task">
+    <p class="tag"><span class="no">task 12</span><span>tree depth</span><span>explain</span></p>
+    <p class="q">
+      Why boost <em>shallow</em> trees rather than fully grown (unbounded-depth) trees?
+    </p>
+    <details class="sol"><summary>Show solution</summary>
+      <div class="sol-body">
+        <p>
+          A fully grown tree can put every training point in its own leaf, so it fits the round's
+          pseudo-residuals <em>perfectly</em> — boosting ends after a single round, having simply
+          memorized the labels (the tree version of taking the raw gradient step: training loss 0,
+          nothing learned between the points). Formally, that base class shatters any distinct point
+          set — infinite VC dimension, vacuous generalization bounds.
+        </p>
+        <p>
+          A shallow tree can only make a small correction per round, so the ensemble's complexity
+          builds up gradually and stops when the loss stops improving — weakness is precisely what
+          makes the base learner boostable.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <div class="takeaway">
+    <p>
+      <strong>If you remember one thing:</strong> boosting adds one weak correction per round, and
+      each lens of this sheet checks one health condition of that loop. The reweighting keeps every
+      round informative (ε<sub>t</sub> bounded away from ½ — and each round's own classifier is
+      neutralized to exactly ½ afterwards); the margins keep growing after the training error is
+      long zero, which is why stopping at "0 errors" is premature; and the gradient view supplies
+      the design rule — base learners must be rich enough to open new directions each round, weak
+      enough not to swallow the residuals in one gulp.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  var svg = document.getElementById("map-svg");
+  var defs = el(svg, "defs", {});
+  var marker = el(defs, "marker", {
+    id: "arr", viewBox: "0 0 10 10", refX: 8, refY: 5,
+    markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse"
+  });
+  el(marker, "path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--muted)" });
+
+  function box(x, y, w, h, stroke, fill) {
+    el(svg, "rect", { x: x, y: y, width: w, height: h, rx: 8, fill: fill, stroke: stroke, "stroke-width": 1.5 });
+  }
+
+  // top box: the recipe
+  box(220, 14, 320, 74, "var(--line)", "var(--card)");
+  txt(svg, 380, 40, "the recipe — boost", { "text-anchor": "middle", "font-size": "16", fill: "var(--ink)", "font-weight": "bold" });
+  txt(svg, 380, 60, "fₜ = fₜ₋₁ + wₜhₜ — one weak fix per round,", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svg, 380, 76, "then take the sign of the vote", { "class": "axis-label", "text-anchor": "middle" });
+
+  // arrows
+  el(svg, "line", { x1: 290, y1: 88, x2: 130, y2: 148, stroke: "var(--muted)", "stroke-width": 1.5, "marker-end": "url(#arr)" });
+  el(svg, "line", { x1: 380, y1: 88, x2: 380, y2: 148, stroke: "var(--muted)", "stroke-width": 1.5, "marker-end": "url(#arr)" });
+  el(svg, "line", { x1: 470, y1: 88, x2: 630, y2: 148, stroke: "var(--muted)", "stroke-width": 1.5, "marker-end": "url(#arr)" });
+
+  // lens 1: reweighting (amber)
+  box(8, 152, 232, 88, "var(--amber)", "var(--amber-soft)");
+  txt(svg, 124, 180, "lens 1 — reweighting", { "text-anchor": "middle", "font-size": "15.5", fill: "var(--amber)", "font-weight": "bold" });
+  txt(svg, 124, 202, "mistakes get louder (Ex 1)", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svg, 124, 220, "wₜ = ½ ln (1−εₜ)/εₜ", { "class": "axis-label", "text-anchor": "middle" });
+
+  // lens 2: margins (blue)
+  box(264, 152, 232, 88, "var(--blue)", "var(--blue-soft)");
+  txt(svg, 380, 180, "lens 2 — margins", { "text-anchor": "middle", "font-size": "15.5", fill: "var(--blue)", "font-weight": "bold" });
+  txt(svg, 380, 202, "learning past zero error (Ex 2)", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svg, 380, 220, "boundary retreats into the gap", { "class": "axis-label", "text-anchor": "middle" });
+
+  // lens 3: gradient descent (crimson)
+  box(520, 152, 232, 88, "var(--crimson)", "var(--crimson-soft)");
+  txt(svg, 636, 180, "lens 3 — gradient descent", { "text-anchor": "middle", "font-size": "15.5", fill: "var(--crimson)", "font-weight": "bold" });
+  txt(svg, 636, 202, "fit the pseudo-residuals (Ex 3)", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svg, 636, 220, "base class = the step directions", { "class": "axis-label", "text-anchor": "middle" });
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · the explainers for this sheet: <a href="adaboost.html">Exercise 1 — AdaBoost by hand</a> · <a href="margins.html">Exercise 2 — boosting past zero</a> · <a href="gradboost.html">Exercise 3 — gradient boosting</a> · Statistical Machine Learning, Uni Tübingen</footer>
+</body>
+</html>

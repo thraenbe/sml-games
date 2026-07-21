@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+<title>Boosting Past Zero — Margins &amp; the Long Run</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  @media (max-width: 720px) { .fig-grid { grid-template-columns: 1fr; } }
+  .fig-cell svg, .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 8rem; min-width: 7rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Assignment 8 · Exercise 2 · Implementing AdaBoost</p>
+  <h1>Training error hits zero. Learning doesn't stop.</h1>
+  <p class="lede">
+    Run AdaBoost with decision stumps and simply refuse to stop. The training error reaches zero
+    within a handful of rounds — and then, for hundreds of rounds more, the <em>test</em> error
+    keeps falling. By the usual overfitting folklore this shouldn't happen. This page reruns the
+    sheet's experiment live in your browser (a real AdaBoost, trained the moment the page loaded)
+    and shows the quantity that explains the mystery: not whether the training points are right,
+    but <em>how far they sit from the boundary</em> — the margin.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>class +1 · and the test error</span>
+    <span class="chip"><span class="dot c"></span>class −1 · and the training error</span>
+    <span class="chip"><span class="dot a"></span>the round marker t · and the margins</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">the setup</span>Two hundred points, an empty band, and stumps</h2>
+  <p>
+    The data: <var>n</var> = 200 training points drawn uniformly from [−1, 1]², but conditioned on
+    |<var>x</var>₁ + <var>x</var>₂| &gt; 0.3 — so an empty diagonal band separates the classes —
+    and labelled by the diagonal, <var>y</var> = sign(<var>x</var>₁ + <var>x</var>₂). The weak
+    learner is an exhaustive decision-stump search: every feature, every threshold between
+    consecutive values, both signs, pick the smallest weighted error. In the sheet's reference run
+    ε₁ = 0.15 and <var>w</var>₁ ≈ 0.87, the training error is 0 from round <var>t</var>₀ = 7, and
+    the weighted errors ε<sub>t</sub> settle around 0.26 — bounded away from ½, so the weak-learning
+    assumption holds with an empirical edge γ̂ ≈ 0.2 the whole way.
+  </p>
+  <p>
+    Below, the same experiment with this page's own seed: the 0-1 error curves of
+    sign(<var>f<sub>t</sub></var>) on train and test, and the decision regions at round
+    <var>t</var>. Start at <var>t</var>₀, where the training error first touches zero — then slide
+    on and watch what the extra rounds buy.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · a live AdaBoost run — errors <span class="tn">(left)</span> and decision regions <span class="tn">(right)</span> at round <span class="tn"><var>t</var></span></p>
+    <div class="fig-grid">
+      <div class="fig-cell"><svg id="err-svg" viewBox="0 0 440 380" role="img" aria-label="Training and test zero-one error of the boosted classifier against the round number on a log scale; the training error drops to zero early while the test error keeps improving for hundreds of rounds"></svg></div>
+      <div class="fig-cell"><svg id="map-svg" viewBox="0 0 440 380" role="img" aria-label="The two-dimensional decision regions of the ensemble at the selected round, with the training points and the empty diagonal band; the boundary staircase refines and retreats into the band as rounds increase"></svg></div>
+    </div>
+    <div class="controls">
+      <label for="tslider">round t = <span id="tval">–</span></label>
+      <input type="range" id="tslider" min="1" max="500" step="1" value="7" aria-label="boosting round">
+      <button class="preset" id="pre-t0">t = t₀ — first zero</button>
+      <button class="preset" id="pre-end">t = 500</button>
+    </div>
+    <div class="readouts">
+      <span>training error <b id="trerr">–</b></span>
+      <span>test error <b id="teerr">–</b></span>
+      <span>edge γ̂ = <b id="edgeval">–</b></span>
+      <span>max |f<sub>t</sub>| = <b id="maxfval">–</b></span>
+      <span class="flag amber" id="pastflag">training error 0 — everything from here on is margin work</span>
+    </div>
+  </div>
+  <figcaption>
+    A genuine run (fixed seed; 200 training, 3000 test points), so the numbers differ slightly from
+    the sheet's reference values. Training error 0 clamps to the bottom edge of the log plot. In the
+    map, the dashed lines are the edges of the empty band |<var>x</var>₁ + <var>x</var>₂| ≤ 0.3: at
+    <var>t</var>₀ the boundary staircase is coarse and veers deep into both class regions — the test
+    points near the band land on the wrong side. By <var>t</var> = 500 it has become a fine
+    staircase running <em>inside</em> the band, far from every training point.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">part (b) · the phenomenon</span>Five-fold better, all of it after “done”</h2>
+  <p>
+    In the reference run the test error is ≈ 0.022 at <var>t</var>₀ = 7 and ≈ 0.004 at
+    <var>T</var> = 500 — a more-than-five-fold improvement, every bit of it earned <em>after</em>
+    the training error was already zero. The improvement keeps arriving in steps until roughly
+    round 300. So the training error tells only a small part of the story: boosting keeps learning
+    long after it has interpolated the training labels. The classical picture — “zero training
+    error means the model has stopped extracting signal and started memorizing” — simply fails
+    here, and the margin theory below says why.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">part (c) · the explanation</span>Margins: the boundary keeps moving away</h2>
+  <p>
+    For a training point, being classified correctly is a yes/no fact — but
+    <var>y<sub>i</sub>f<sub>t</sub></var>(<var>x<sub>i</sub></var>) measures something finer:
+    <em>how confidently</em> the vote gets it right. Because the raw values grow with every added
+    stump (in the reference run max |<var>f<sub>t</sub></var>| inflates from ≈ 6 to ≈ 266), the
+    meaningful quantity is the <strong>normalized margin</strong>
+  </p>
+  <p class="eq boxed"><span class="a">margin<sub><var>i</var></sub></span> &#61; <var>y<sub>i</sub></var><var>f<sub>t</sub></var>(<var>x<sub>i</sub></var>) / Σ<sub><var>s</var>≤<var>t</var></sub> <var>w<sub>s</sub></var> &nbsp;∈&nbsp; [−1, 1]</p>
+  <p>
+    Zero training error only says every margin is positive. Further rounds keep <em>increasing</em>
+    the margins — pushing the decision boundary off the points and into the empty band. That is
+    exactly what the margin-based generalization bound from the lecture rewards:
+    P(<var>yf</var>(<var>x</var>) ≤ 0) ≲ P̂(margin ≤ τ) + O((1/τ)√(<var>d</var> log <var>n</var> / <var>n</var>)) —
+    a bound that does <em>not depend on the number of rounds</em> <var>T</var>. Growing margins let
+    the first term shrink for larger τ, so the guarantee (and, as the run shows, the actual test
+    error) can keep improving even though the training error has long been zero.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · the margin distribution of the 200 training points at round <span class="tn"><var>t</var></span></p>
+    <svg id="marg-svg" viewBox="0 0 760 360" role="img" aria-label="Histogram of the normalized margins of the training points at the selected round, compared with a ghost outline of the distribution at the first zero error round; the mass moves rightward toward one as rounds increase"></svg>
+    <div class="controls">
+      <label for="mslider">round t = <span id="mtval">–</span></label>
+      <input type="range" id="mslider" min="1" max="500" step="1" value="500" aria-label="boosting round for the margin histogram">
+    </div>
+    <div class="readouts">
+      <span>min margin <b id="minmarg">–</b></span>
+      <span>mean margin <b id="meanmarg">–</b></span>
+      <span class="flag amber" id="allposflag">all margins positive — and still being pushed right</span>
+    </div>
+  </div>
+  <figcaption>
+    Amber bars: the margin distribution at round <var>t</var>; the outlined ghost is the
+    distribution at <var>t</var>₀, when the training error first hit zero. At <var>t</var>₀ many
+    margins hover barely above 0 — correct, but by a whisker, and the whisker points are the test
+    mistakes waiting to happen. Hundreds of rounds later the whole distribution has marched toward
+    +1: same 0 training error, far more confident vote, visibly better test error.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> “Zero training error” is a statement about signs;
+      generalization here is a statement about <em>distances</em>. AdaBoost minimizes an exponential
+      loss that never saturates — a correctly classified point still contributes
+      <var>e</var><sup>−<var>y<sub>i</sub>f</var>(<var>x<sub>i</sub></var>)</sup> — so the algorithm
+      keeps paying attention to barely-right points and keeps pushing the boundary away from them,
+      into the gap between the classes. The margin bound turns that into a guarantee that doesn't
+      count rounds: what matters is not how big the ensemble is, but how confidently it separates.
+      Interpolation is not the finish line; it is where margin maximization starts. (How the
+      reweighting machine works round by round is <a href="adaboost.html">Exercise 1</a>; why
+      “minimize a loss by adding one function at a time” is gradient descent in disguise is
+      <a href="gradboost.html">Exercise 3</a>.)
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  /* ---------- the experiment: real AdaBoost with stumps ---------- */
+  var seed = 106 >>> 0;
+  function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+
+  function makeData(n) {
+    var x1 = [], x2 = [], y = [];
+    while (x1.length < n) {
+      var a = rnd() * 2 - 1, b = rnd() * 2 - 1;
+      if (Math.abs(a + b) <= 0.3) continue;
+      x1.push(a); x2.push(b); y.push(a + b > 0 ? 1 : -1);
+    }
+    return { x1: x1, x2: x2, y: y, n: n };
+  }
+  var TR = makeData(200), TE = makeData(3000);
+  var T = 500;
+
+  function sortedIdx(arr) {
+    var idx = arr.map(function (_, i) { return i; });
+    idx.sort(function (a, b) { return arr[a] - arr[b]; });
+    return idx;
+  }
+  var feats = [TR.x1, TR.x2];
+  var orders = [sortedIdx(TR.x1), sortedIdx(TR.x2)];
+
+  function stumpPred(st, x1, x2) {
+    var c = st.j === 0 ? x1 : x2;
+    return c > st.thr ? st.s : -st.s;
+  }
+
+  var D = [], i;
+  for (i = 0; i < TR.n; i++) D.push(1 / TR.n);
+  var stumps = [], epsArr = [], wArr = [], trainErrArr = [], testErrArr = [], sumWArr = [];
+  var Ftr = new Float64Array(TR.n), Fte = new Float64Array(TE.n);
+  var sumW = 0, t0 = -1;
+
+  for (var t = 0; t < T; t++) {
+    var Wminus = 0;
+    for (i = 0; i < TR.n; i++) if (TR.y[i] < 0) Wminus += D[i];
+    var best = { err: 2, j: 0, thr: 0, s: 1 };
+    for (var j = 0; j < 2; j++) {
+      var ord = orders[j], xs = feats[j];
+      var cumPlus = 0, cumMinus = 0;
+      // k = -1: threshold below all points
+      var e1 = Wminus; // s=+1 predicts +1 everywhere
+      if (e1 < best.err) best = { err: e1, j: j, thr: xs[ord[0]] - 1, s: 1 };
+      if (1 - e1 < best.err) best = { err: 1 - e1, j: j, thr: xs[ord[0]] - 1, s: -1 };
+      for (var k = 0; k < TR.n; k++) {
+        var idx = ord[k];
+        if (TR.y[idx] > 0) cumPlus += D[idx]; else cumMinus += D[idx];
+        if (k < TR.n - 1 && xs[ord[k + 1]] === xs[idx]) continue;
+        var thr = k < TR.n - 1 ? (xs[idx] + xs[ord[k + 1]]) / 2 : xs[idx] + 1;
+        e1 = (Wminus - cumMinus) + cumPlus;
+        if (e1 < best.err) best = { err: e1, j: j, thr: thr, s: 1 };
+        if (1 - e1 < best.err) best = { err: 1 - e1, j: j, thr: thr, s: -1 };
+      }
+    }
+    var eps = Math.max(best.err, 1e-10);
+    var w = 0.5 * Math.log((1 - eps) / eps);
+    best.w = w;
+    stumps.push(best);
+    epsArr.push(eps);
+    wArr.push(w);
+    sumW += w;
+    sumWArr.push(sumW);
+
+    var Z = 0;
+    for (i = 0; i < TR.n; i++) {
+      var h = stumpPred(best, TR.x1[i], TR.x2[i]);
+      D[i] *= Math.exp(-w * TR.y[i] * h);
+      Z += D[i];
+      Ftr[i] += w * h;
+    }
+    for (i = 0; i < TR.n; i++) D[i] /= Z;
+    var terr = 0;
+    for (i = 0; i < TR.n; i++) if (TR.y[i] * Ftr[i] <= 0) terr++;
+    trainErrArr.push(terr / TR.n);
+    if (t0 < 0 && terr === 0) t0 = t + 1;
+
+    var teerr = 0;
+    for (i = 0; i < TE.n; i++) {
+      Fte[i] += w * stumpPred(best, TE.x1[i], TE.x2[i]);
+      if (TE.y[i] * Fte[i] <= 0) teerr++;
+    }
+    testErrArr.push(teerr / TE.n);
+  }
+  if (t0 < 0) t0 = 1;
+
+  /* ---------- Figure 1 left: error curves ---------- */
+  var esvg = document.getElementById("err-svg");
+  var me = { l: 46, r: 12, t: 16, b: 40 }, WE = 440, HE = 380;
+  var LFLOOR = -3.15; // log10 floor (zero clamps here)
+  function ex(t) { return me.l + (t / T) * (WE - me.l - me.r); }
+  function ey(l10) { return me.t + (l10 / LFLOOR) * (HE - me.t - me.b); }
+
+  [0, -1, -2, -3].forEach(function (l) {
+    el(esvg, "line", { x1: me.l, y1: ey(l), x2: WE - me.r, y2: ey(l), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(esvg, me.l - 6, ey(l) + 4, l === 0 ? "1" : "10" + ({ "-1": "⁻¹", "-2": "⁻²", "-3": "⁻³" })[l], { "class": "axis-label", "text-anchor": "end" });
+  });
+  for (var g = 0; g <= 500; g += 100) {
+    el(esvg, "line", { x1: ex(g), y1: me.t, x2: ex(g), y2: HE - me.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(esvg, ex(g), HE - me.b + 16, g, { "class": "axis-label", "text-anchor": "middle" });
+  }
+  txt(esvg, WE - me.r, HE - 6, "round t", { "class": "axis-label", "text-anchor": "end" });
+  txt(esvg, me.l - 34, me.t - 4, "0-1 error", { "class": "axis-label" });
+
+  function errPath(arr) {
+    var d = "";
+    for (var t = 0; t < T; t++) {
+      var v = arr[t];
+      var l10 = v <= 0 ? LFLOOR : Math.max(LFLOOR, Math.log10(v));
+      d += (t ? "L" : "M") + ex(t + 1).toFixed(1) + "," + ey(l10).toFixed(1);
+    }
+    return d;
+  }
+  el(esvg, "path", { d: errPath(testErrArr), fill: "none", stroke: "var(--blue)", "stroke-width": 2 });
+  el(esvg, "path", { d: errPath(trainErrArr), fill: "none", stroke: "var(--crimson)", "stroke-width": 2 });
+  txt(esvg, ex(180), ey(Math.log10(Math.max(testErrArr[179], 1e-3))) - 14, "test", { fill: "var(--blue)", "font-size": "13", style: "fill: var(--blue);" });
+  txt(esvg, ex(90), ey(-3.04), "training", { fill: "var(--crimson)", "font-size": "13", style: "fill: var(--crimson);" });
+  var eMark = el(esvg, "line", { stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "4 4", y1: me.t, y2: HE - me.b });
+
+  /* ---------- Figure 1 right: decision map ---------- */
+  var msvg = document.getElementById("map-svg");
+  var mm = { l: 40, r: 12, t: 16, b: 40 }, WM = 440, HM = 380;
+  function mx(v) { return mm.l + ((v + 1) / 2) * (WM - mm.l - mm.r); }
+  function my(v) { return HM - mm.b - ((v + 1) / 2) * (HM - mm.t - mm.b); }
+
+  var G = 50;
+  var cellW = (WM - mm.l - mm.r) / G, cellH = (HM - mm.t - mm.b) / G;
+  var cells = [];
+  var gridF = new Float64Array(G * G);
+  var gridT = 0;
+  var cellsGroup = el(msvg, "g", {});
+  for (var r = 0; r < G; r++) {
+    for (var c = 0; c < G; c++) {
+      cells.push(el(cellsGroup, "rect", {
+        x: mm.l + c * cellW, y: mm.t + (G - 1 - r) * cellH,
+        width: cellW + 0.5, height: cellH + 0.5,
+        fill: "none", "fill-opacity": 0.25
+      }));
+    }
+  }
+  // band edges + frame + points
+  el(msvg, "line", { x1: mx(-0.7), y1: my(1), x2: mx(1), y2: my(-0.7), stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "5 4" });
+  el(msvg, "line", { x1: mx(-1), y1: my(0.7), x2: mx(0.7), y2: my(-1), stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "5 4" });
+  el(msvg, "rect", { x: mm.l, y: mm.t, width: WM - mm.l - mm.r, height: HM - mm.t - mm.b, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  [-1, 0, 1].forEach(function (v) {
+    txt(msvg, mx(v), HM - mm.b + 16, v, { "class": "axis-label", "text-anchor": "middle" });
+    txt(msvg, mm.l - 6, my(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  txt(msvg, WM - mm.r, HM - 6, "x₁", { "class": "axis-label", "text-anchor": "end" });
+  txt(msvg, mm.l - 28, mm.t - 4, "x₂", { "class": "axis-label" });
+  for (i = 0; i < TR.n; i++) {
+    el(msvg, "circle", {
+      cx: mx(TR.x1[i]), cy: my(TR.x2[i]), r: 2.6,
+      fill: TR.y[i] > 0 ? "var(--blue)" : "var(--crimson)",
+      stroke: "var(--card)", "stroke-width": 0.7
+    });
+  }
+
+  function cellCenter(idx) {
+    var r = Math.floor(idx / G), c = idx % G;
+    return { x: -1 + (c + 0.5) * 2 / G, y: -1 + (r + 0.5) * 2 / G };
+  }
+  function applyStumpToGrid(st, sign) {
+    for (var idx = 0; idx < G * G; idx++) {
+      var p = cellCenter(idx);
+      gridF[idx] += sign * st.w * stumpPred(st, p.x, p.y);
+    }
+  }
+  function setGridRound(t) {
+    var s;
+    if (t >= gridT) { for (s = gridT; s < t; s++) applyStumpToGrid(stumps[s], 1); }
+    else { for (s = gridT - 1; s >= t; s--) applyStumpToGrid(stumps[s], -1); }
+    gridT = t;
+    var maxAbs = 0;
+    for (var idx = 0; idx < G * G; idx++) {
+      var f = gridF[idx];
+      if (Math.abs(f) > maxAbs) maxAbs = Math.abs(f);
+      cells[(Math.floor(idx / G)) * G + (idx % G)].setAttribute("fill",
+        f > 0 ? "var(--blue)" : (f < 0 ? "var(--crimson)" : "none"));
+    }
+    return maxAbs;
+  }
+
+  /* ---------- Figure 1 wiring ---------- */
+  var tS = document.getElementById("tslider");
+  var tEl = document.getElementById("tval");
+  var trEl = document.getElementById("trerr"), teEl = document.getElementById("teerr");
+  var edgeEl = document.getElementById("edgeval"), maxfEl = document.getElementById("maxfval");
+  var pastFlag = document.getElementById("pastflag");
+
+  function fmtErr(v) { return v === 0 ? "0" : v.toFixed(3); }
+  function render1() {
+    var t = parseInt(tS.value, 10);
+    tEl.textContent = t;
+    eMark.setAttribute("x1", ex(t)); eMark.setAttribute("x2", ex(t));
+    var maxAbs = setGridRound(t);
+    trEl.textContent = fmtErr(trainErrArr[t - 1]);
+    teEl.textContent = fmtErr(testErrArr[t - 1]);
+    var edge = 0.5;
+    for (var s = 0; s < t; s++) edge = Math.min(edge, 0.5 - epsArr[s]);
+    edgeEl.textContent = edge.toFixed(2);
+    maxfEl.textContent = maxAbs.toFixed(1);
+    pastFlag.classList.toggle("on", trainErrArr[t - 1] === 0);
+  }
+  tS.addEventListener("input", render1);
+  document.getElementById("pre-t0").addEventListener("click", function () { tS.value = t0; render1(); });
+  document.getElementById("pre-end").addEventListener("click", function () { tS.value = T; render1(); });
+  tS.value = t0;
+  render1();
+
+  /* ---------- Figure 2: margin histogram ---------- */
+  var hsvg = document.getElementById("marg-svg");
+  var mh = { l: 52, r: 16, t: 20, b: 44 }, WH = 760, HH = 360;
+  var NB = 24;
+
+  function marginsAt(t) {
+    var f = new Float64Array(TR.n);
+    for (var s = 0; s < t; s++) {
+      var st = stumps[s];
+      for (var i = 0; i < TR.n; i++) f[i] += st.w * stumpPred(st, TR.x1[i], TR.x2[i]);
+    }
+    var m = [], W = sumWArr[t - 1];
+    for (i = 0; i < TR.n; i++) m.push(TR.y[i] * f[i] / W);
+    return m;
+  }
+  function histo(m) {
+    var h = new Array(NB).fill(0);
+    m.forEach(function (v) {
+      var b = Math.min(NB - 1, Math.max(0, Math.floor((v + 1) / 2 * NB)));
+      h[b] += 1 / TR.n;
+    });
+    return h;
+  }
+
+  var gh = histo(marginsAt(t0));
+  var YMAXH = Math.max(0.5, Math.ceil(Math.max.apply(null, gh) * 1.25 / 0.05) * 0.05);
+  function hx(v) { return mh.l + ((v + 1) / 2) * (WH - mh.l - mh.r); }
+  function hy(fr) { return mh.t + (1 - Math.min(fr, YMAXH) / YMAXH) * (HH - mh.t - mh.b); }
+
+  [-1, -0.5, 0, 0.5, 1].forEach(function (v) {
+    el(hsvg, "line", { x1: hx(v), y1: mh.t, x2: hx(v), y2: HH - mh.b, stroke: v === 0 ? "var(--muted)" : "var(--grid)", "stroke-width": v === 0 ? 1.4 : 1 });
+    txt(hsvg, hx(v), HH - mh.b + 18, v, { "class": "axis-label", "text-anchor": "middle" });
+  });
+  for (var fr = 0; fr <= YMAXH + 1e-9; fr += 0.25) {
+    el(hsvg, "line", { x1: mh.l, y1: hy(fr), x2: WH - mh.r, y2: hy(fr), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(hsvg, mh.l - 7, hy(fr) + 4, fr.toFixed(2).replace(/\.?0+$/, "") || "0", { "class": "axis-label", "text-anchor": "end" });
+  }
+  txt(hsvg, WH - mh.r, HH - 8, "normalized margin yᵢ fₜ(xᵢ) / Σ wₛ", { "class": "axis-label", "text-anchor": "end" });
+  txt(hsvg, mh.l - 40, mh.t - 6, "fraction of points", { "class": "axis-label" });
+
+  var bars = [];
+  var binW = (WH - mh.l - mh.r) / NB;
+  for (var b = 0; b < NB; b++) {
+    bars.push(el(hsvg, "rect", {
+      x: mh.l + b * binW + 1, width: binW - 2, y: hy(0), height: 0,
+      fill: "var(--amber)", "fill-opacity": 0.75, rx: 2
+    }));
+  }
+  // ghost outline at t0
+  var gd = "M" + (mh.l).toFixed(1) + "," + hy(0).toFixed(1);
+  for (b = 0; b < NB; b++) {
+    gd += "L" + (mh.l + b * binW).toFixed(1) + "," + hy(gh[b]).toFixed(1);
+    gd += "L" + (mh.l + (b + 1) * binW).toFixed(1) + "," + hy(gh[b]).toFixed(1);
+  }
+  gd += "L" + (WH - mh.r).toFixed(1) + "," + hy(0).toFixed(1);
+  el(hsvg, "path", { d: gd, fill: "none", stroke: "var(--muted)", "stroke-width": 1.6, "stroke-dasharray": "5 4" });
+  // fixed legend, top-left (the x < 0 half stays empty once training error is 0)
+  el(hsvg, "rect", { x: mh.l + 16, y: mh.t + 12, width: 13, height: 13, fill: "var(--amber)", "fill-opacity": 0.75, rx: 2 });
+  txt(hsvg, mh.l + 36, mh.t + 23, "round t (bars)", { fill: "var(--ink-2)", "font-size": "13" });
+  el(hsvg, "line", { x1: mh.l + 16, y1: mh.t + 41, x2: mh.l + 29, y2: mh.t + 41, stroke: "var(--muted)", "stroke-width": 1.6, "stroke-dasharray": "5 4" });
+  txt(hsvg, mh.l + 36, mh.t + 45, "round t₀ (outline)", { fill: "var(--ink-2)", "font-size": "13" });
+
+  var mS = document.getElementById("mslider");
+  var mtEl = document.getElementById("mtval");
+  var minEl = document.getElementById("minmarg"), meanEl = document.getElementById("meanmarg");
+  var allposFlag = document.getElementById("allposflag");
+
+  function render2() {
+    var t = parseInt(mS.value, 10);
+    mtEl.textContent = t;
+    var m = marginsAt(t);
+    var h = histo(m);
+    for (var b = 0; b < NB; b++) {
+      bars[b].setAttribute("y", hy(h[b]));
+      bars[b].setAttribute("height", Math.max(0, hy(0) - hy(h[b])));
+    }
+    var mn = 1, mean = 0;
+    m.forEach(function (v) { mn = Math.min(mn, v); mean += v / TR.n; });
+    minEl.textContent = mn.toFixed(2);
+    meanEl.textContent = mean.toFixed(2);
+    allposFlag.classList.toggle("on", mn > 0);
+  }
+  mS.addEventListener("input", render2);
+  render2();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · this sheet: <a href="adaboost.html">Exercise 1 — AdaBoost by hand</a> · <a href="gradboost.html">Exercise 3 — gradient boosting</a> · <a href="practice8.html">practice problems</a> · last sheet: <a href="coefficients.html">reading coefficients</a> · <a href="bagging.html">bagging &amp; variance</a></footer>
+</body>
+</html>
