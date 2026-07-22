@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+<title>Cost-Sensitive Bayes — Priors, Posteriors &amp; the Moving Threshold</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 7rem; min-width: 6rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+  button.preset.active { border-color: var(--crimson); color: var(--crimson); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Bayesian Decision Theory · Mock Exam Q3, Expanded</p>
+  <h1>Not every mistake costs the same.</h1>
+  <p class="lede">
+    The mock exam's Question 3 packs the whole of Bayesian decision theory into one binary world:
+    a prior π &#61; ℙ(<var>Y</var>&#61;1), two class-conditionals, and a loss where a missed
+    positive costs <var>a</var> but a false alarm costs 1. Everything — the posterior η(<var>x</var>),
+    the classifier <var>f</var>°, the Bayes error, the shifted threshold, the tipping prior — falls
+    out of one comparison. This page builds that comparison three times: as areas, as risk lines,
+    and as a prior dial.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>class <var>Y</var> &#61; 1 · predict 1</span>
+    <span class="chip"><span class="dot c"></span>class <var>Y</var> &#61; 0 · predict 0</span>
+    <span class="chip"><span class="dot a"></span>thresholds &amp; tipping points</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">The setup · exam notation</span>One prior, two conditionals, four areas</h2>
+  <p>
+    The world: <var>X</var> ∈ {0, 1}, <var>Y</var> ∈ {0, 1}, prior
+    ℙ(<var>Y</var>&#61;1) &#61; 2/5, and class-conditionals
+  </p>
+  <p class="eq">ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;1) &#61; 4/5, &nbsp;&nbsp; ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;0) &#61; 1/5</p>
+  <p>
+    Read: positives usually show the signal, negatives usually don't. Every quantity in the
+    question comes from the <strong>joint</strong>, and the joint is just prior × conditional —
+    four multiplications:
+  </p>
+  <p class="eq boxed">
+    ℙ(<var>X</var>&#61;1, <var>Y</var>&#61;1) &#61; <sup>2</sup>⁄<sub>5</sub> · <sup>4</sup>⁄<sub>5</sub> &#61; <sup>8</sup>⁄<sub>25</sub> &nbsp;·&nbsp;
+    ℙ(<var>X</var>&#61;0, <var>Y</var>&#61;1) &#61; <sup>2</sup>⁄<sub>25</sub> &nbsp;·&nbsp;
+    ℙ(<var>X</var>&#61;1, <var>Y</var>&#61;0) &#61; <sup>3</sup>⁄<sub>25</sub> &nbsp;·&nbsp;
+    ℙ(<var>X</var>&#61;0, <var>Y</var>&#61;0) &#61; <sup>12</sup>⁄<sub>25</sub>
+  </p>
+  <p>
+    From it, the <strong>marginal</strong> μ(<var>x</var>) &#61; ℙ(<var>X</var>&#61;<var>x</var>)
+    sums each column: μ(1) &#61; 8/25 + 3/25 &#61; 11/25, μ(0) &#61; 14/25. And the
+    <strong>posterior</strong> η(<var>x</var>) &#61; ℙ(<var>Y</var>&#61;1 | <var>X</var>&#61;<var>x</var>)
+    divides the positive part by the column total:
+  </p>
+  <p class="eq">η(1) &#61; <span class="b">(8/25) / (11/25) &#61; 8/11</span>, &nbsp;&nbsp; η(0) &#61; <span class="c">(2/25) / (14/25) &#61; 1/7</span></p>
+  <p>
+    That is all Bayes' rule is: an area ratio. The figure draws the joint as a unit square — width
+    split by the prior, heights by the conditionals — so you can literally see μ and η:
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · the joint as area — μ(<span class="tn"><var>x</var></span>) sums a band, η(<span class="tn"><var>x</var></span>) is its blue share</p>
+    <svg id="mo-svg" viewBox="0 0 760 430" role="img" aria-label="A unit square split into four tiles: width by the prior on Y, height by the class-conditionals of X, with tile areas equal to the joint probabilities; an amber outline traces the tiles for one value of X to show the marginal and posterior"></svg>
+    <div class="controls">
+      <label for="mopi">π = ℙ(Y=1) = <span id="mopival">0.40</span></label>
+      <input type="range" id="mopi" min="0.05" max="0.95" step="0.01" value="0.4" aria-label="prior pi">
+      <label for="mop1">ℙ(X=1|Y=1) = <span id="mop1val">0.80</span></label>
+      <input type="range" id="mop1" min="0.02" max="0.98" step="0.01" value="0.8" aria-label="conditional for class 1">
+      <label for="mop0">ℙ(X=1|Y=0) = <span id="mop0val">0.20</span></label>
+      <input type="range" id="mop0" min="0.02" max="0.98" step="0.01" value="0.2" aria-label="conditional for class 0">
+    </div>
+    <div class="controls" style="border-top: none; padding-top: 0;">
+      <button class="preset active" id="mohx1">trace μ(1), η(1)</button>
+      <button class="preset" id="mohx0">trace μ(0), η(0)</button>
+      <button class="preset" id="moexam">the exam's numbers</button>
+      <button class="preset" id="morare">rare disease: π = 0.05</button>
+    </div>
+    <div class="readouts">
+      <span>joint: <b id="moj11">–</b> / <b id="moj10">–</b> / <b id="moj01">–</b> / <b id="moj00">–</b></span>
+      <span class="flag amber" id="mobase">base-rate surprise — positive evidence, yet η(1) &lt; ½</span>
+    </div>
+  </div>
+  <figcaption>
+    Blue columns are <var>Y</var>&#61;1 (width π), crimson are <var>Y</var>&#61;0; the darker top
+    tiles are <var>X</var>&#61;1, the lighter bottom tiles <var>X</var>&#61;0. The amber outline
+    collects the two tiles with the traced <var>x</var>: their total area is μ(<var>x</var>) and
+    the blue fraction of that area is η(<var>x</var>). The <em>rare disease</em> preset is the
+    classic base-rate trap: strong evidence, tiny prior, posterior barely a third.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Part (a) · the 0–1 baseline</span>The Bayes classifier <var>f</var>° and its error</h2>
+  <p>
+    Under 0–1 loss, predict the majority side of each column: <var>f</var>°(<var>x</var>) &#61; 1
+    iff η(<var>x</var>) ≥ ½. Here η(1) &#61; 8/11 &gt; ½ and η(0) &#61; 1/7 &lt; ½, so
+    <var>f</var>°(1) &#61; 1, <var>f</var>°(0) &#61; 0 — follow the signal. The Bayes error
+    collects the <em>losing</em> share of each column, weighted by how often the column occurs:
+  </p>
+  <p class="eq boxed">ℙ(<var>f</var>°(<var>X</var>) ≠ <var>Y</var>) &#61; Σ<sub><var>x</var></sub> μ(<var>x</var>) · min(η(<var>x</var>), 1 − η(<var>x</var>)) &#61; <sup>11</sup>⁄<sub>25</sub> · <sup>3</sup>⁄<sub>11</sub> + <sup>14</sup>⁄<sub>25</sub> · <sup>1</sup>⁄<sub>7</sub> &#61; <sup>1</sup>⁄<sub>5</sub></p>
+  <p>
+    No classifier of any kind beats 1/5 in this world — the overlap of the two classes makes that
+    error unavoidable. Every learning-theory bound on the sheets measures distance to exactly this
+    number.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Part (b) · costs enter</span>Two risks, one comparison, a moving threshold</h2>
+  <p>
+    Now the exam's asymmetric loss: ℓ(<var>y</var>&#61;1, <var>ŷ</var>&#61;0) &#61; <var>a</var>
+    (a missed positive), ℓ(<var>y</var>&#61;0, <var>ŷ</var>&#61;1) &#61; 1 (a false alarm),
+    correct predictions free. At a given <var>x</var> you know η(<var>x</var>), and each action has
+    a <strong>conditional risk</strong> — its expected loss:
+  </p>
+  <p class="eq">
+    <span class="b">R(1 | <var>x</var>) &#61; 1 · (1 − η(<var>x</var>))</span> &nbsp;&nbsp;·&nbsp;&nbsp;
+    <span class="c">R(0 | <var>x</var>) &#61; <var>a</var> · η(<var>x</var>)</span>
+  </p>
+  <p>
+    Predicting 1 can only go wrong if the truth is 0 (probability 1 − η, cost 1); predicting 0 can
+    only go wrong if the truth is 1 (probability η, cost <var>a</var>). The Bayes decision takes the
+    cheaper side:
+  </p>
+  <p class="eq boxed">predict 1 &nbsp;⟺&nbsp; 1 − η(<var>x</var>) &lt; <var>a</var>&#8202;η(<var>x</var>) &nbsp;⟺&nbsp; η(<var>x</var>) &gt; 1 / (1 + <var>a</var>)</p>
+  <p>
+    At <var>a</var> &#61; 1 this is the familiar ½. As misses get pricier the threshold slides
+    <em>down</em>: you demand less and less evidence before sounding the alarm. At
+    η &#61; 1/(1+<var>a</var>) both actions cost the same, so either tie-break is optimal — the
+    exam says so explicitly. Watch the machine:
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · conditional risks as lines over η — the decision takes the lower one</p>
+    <div class="readouts" style="margin-top: 0;">
+      <span style="color: var(--blue);">R(1|x) = 1 − η</span>
+      <span style="color: var(--crimson);">R(0|x) = a·η</span>
+      <span style="color: var(--amber);">optimal = lower envelope</span>
+    </div>
+    <svg id="rk-svg" viewBox="0 0 760 400" role="img" aria-label="The two conditional risk lines, one minus eta falling in blue and a times eta rising in crimson, crossing at the threshold one over one plus a; the lower envelope is shaded amber and dots mark the exam's two posterior values"></svg>
+    <div class="controls">
+      <label for="rka">miss cost a = <span id="rkaval">1.0</span></label>
+      <input type="range" id="rka" min="0.1" max="9" step="0.1" value="1" aria-label="cost of a missed positive">
+      <button class="preset" id="rkp1">0–1 loss (a = 1)</button>
+      <button class="preset" id="rkp6">the tipping cost a = 6</button>
+      <button class="preset" id="rkp9">screening: a = 9</button>
+    </div>
+    <div class="readouts">
+      <span>threshold 1/(1+a) = <b id="rkthr">–</b></span>
+      <span>f(0) = <b id="rkf0">–</b>, f(1) = <b id="rkf1">–</b></span>
+      <span>overall risk R(f°ₐ) = <b id="rkrisk">–</b></span>
+      <span class="flag amber" id="rkflip">even x = 0 predicts 1 now — misses cost too much</span>
+    </div>
+  </div>
+  <figcaption>
+    The dots sit at the exam's posteriors η(0) &#61; 1/7 and η(1) &#61; 8/11, riding the lower
+    envelope. Raising <var>a</var> steepens the crimson line and drags the crossing left; at
+    <var>a</var> &#61; 6 it reaches 1/7 and the decision at <var>x</var> &#61; 0 flips — the
+    classifier starts alarming on <em>no</em> evidence. The overall risk is
+    Σ<sub>x</sub> μ(<var>x</var>) · min(<var>a</var>η, 1−η), which at <var>a</var> &#61; 1 is the
+    Bayes error 1/5.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Part (c) · the prior dial</span>Keep the loss, move the world</h2>
+  <p>
+    Part (c) flips the experiment: keep the <em>standard 0–1 loss</em> and the class-conditionals
+    ℙ(<var>X</var>&#61;0 | <var>Y</var>&#61;1) &#61; 1/5, ℙ(<var>X</var>&#61;0 | <var>Y</var>&#61;0) &#61; 4/5,
+    but treat the prior π &#61; ℙ(<var>Y</var>&#61;1) as adjustable. The posterior at
+    <var>x</var> &#61; 0 becomes a function of π — the exam's own display:
+  </p>
+  <p class="eq boxed">η(0) &#61; <sup>1</sup>⁄<sub>5</sub>&#8202;π &nbsp;/&nbsp; ( <sup>1</sup>⁄<sub>5</sub>&#8202;π + <sup>4</sup>⁄<sub>5</sub>&#8202;(1 − π) ) &#61; π / (4 − 3π)</p>
+  <p>
+    Breaking ties toward 1, the decision at <var>x</var> &#61; 0 is 1 iff η(0) ≥ ½ ⟺
+    π ≥ 4(1 − π) ⟺ <strong>π ≥ 4/5</strong> — the smallest such prior is π &#61; 4/5. The
+    intuition: <var>x</var> &#61; 0 is evidence <em>against</em> class 1 (it is four times likelier
+    under <var>Y</var>&#61;0), so the prior must be lopsided enough to overrule the evidence.
+    The same algebra with a general threshold gives both tipping priors at once — for
+    η(<var>x</var>) ≥ 1/(1+<var>a</var>):
+  </p>
+  <p class="eq">π<sub>0</sub><sup>*</sup> &#61; 4 / (4 + <var>a</var>) &nbsp;&nbsp;·&nbsp;&nbsp; π<sub>1</sub><sup>*</sup> &#61; 1 / (1 + 4<var>a</var>)</p>
+  <p>
+    (<var>a</var> &#61; 1 recovers 4/5 and 1/5.) Below π₁*, even the positive signal can't rescue
+    class 1; above π₀*, even the negative signal can't stop it. In between is the only regime
+    where the feature actually decides.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 3 · posteriors against the prior — where each <span class="tn"><var>x</var></span> tips to class 1</p>
+    <svg id="pd-svg" viewBox="0 0 760 420" role="img" aria-label="The two posterior curves eta of one and eta of zero as functions of the prior pi, with the decision threshold as a horizontal amber line and the two tipping priors marked where each curve crosses it"></svg>
+    <div class="controls">
+      <label for="pda">miss cost a = <span id="pdaval">1.0</span></label>
+      <input type="range" id="pda" min="0.1" max="9" step="0.1" value="1" aria-label="cost of a missed positive">
+      <label for="pdpi">prior π = <span id="pdpival">0.40</span></label>
+      <input type="range" id="pdpi" min="0.02" max="0.98" step="0.01" value="0.4" aria-label="prior pi marker">
+      <button class="preset" id="pdc">part (c): a = 1, π at 4/5</button>
+    </div>
+    <div class="readouts">
+      <span>η(0) = <b id="pdh0">–</b>, η(1) = <b id="pdh1">–</b></span>
+      <span>π₀* = 4/(4+a) = <b id="pdt0">–</b></span>
+      <span>π₁* = 1/(1+4a) = <b id="pdt1">–</b></span>
+      <span class="flag" id="pdconst">f is constant — the feature no longer matters</span>
+    </div>
+  </div>
+  <figcaption>
+    Blue: η(1) &#61; 4π/(1+3π), always above the dashed “uninformative” diagonal η &#61; π.
+    Crimson: η(0) &#61; π/(4−3π), always below it — seeing <var>x</var> &#61; 0 lowers your belief.
+    The amber line is the threshold 1/(1+<var>a</var>); its crossings with the curves are the
+    tipping priors π₁* and π₀*. Outside the strip between them, both columns get the same label
+    and the classifier ignores <var>X</var> entirely.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">The synthesis</span>Costs and priors are the same dial</h2>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">Move the threshold (part b)</p>
+      <p>
+        Fix the world, change the loss: the posteriors η(<var>x</var>) stay put and the threshold
+        1/(1+<var>a</var>) slides. A decision flips when the threshold crosses a posterior — at
+        <var>a</var> &#61; 6 for the exam's <var>x</var> &#61; 0.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">Move the posteriors (part c)</p>
+      <p>
+        Fix the loss, change the world: the threshold stays at ½ and the dots slide along
+        η(0) &#61; π/(4−3π), η(1) &#61; 4π/(1+3π). The same flip happens when a posterior crosses
+        the threshold — at π &#61; 4/5.
+      </p>
+    </div>
+  </div>
+  <p>
+    Both dials end at the identical inequality
+    <var>a</var>&#8202;η(<var>x</var>) ≷ 1 − η(<var>x</var>), which is why exam part (b) and part
+    (c) are one derivation wearing two costumes. In likelihood-ratio form: predict 1 iff
+    ℙ(<var>X</var>&#61;<var>x</var>|<var>Y</var>&#61;1) / ℙ(<var>X</var>&#61;<var>x</var>|<var>Y</var>&#61;0) &gt; (1−π) / (<var>a</var>&#8202;π)
+    — evidence on the left, prior and costs bundled on the right.
+  </p>
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> Bayesian decision theory is the course's definition of
+      “best”: <var>f</var>° is the target every consistency statement, excess-risk bound, and
+      surrogate loss on the sheets is measured against. And its whole machinery is one comparison
+      of expected costs, <var>a</var>&#8202;η versus 1 − η. Costs tilt the comparison, priors move
+      η, and the feature only matters in the window where the two forces don't already settle the
+      argument. When the exam asks for “the smallest π” or “the decision rule in terms of η”, it
+      is asking you to run this one comparison — the arithmetic before it (joint → marginal →
+      posterior) is three multiplications and a division, drawn as areas in Figure 1.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+
+  /* ---------- Figure 1: the joint as a mosaic ---------- */
+  var svg1 = document.getElementById("mo-svg");
+  var PX0 = 316, PW = 380, PY0 = 40, PH = 360;
+  el(svg1, "rect", { x: PX0, y: PY0, width: PW, height: PH, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  var t11 = el(svg1, "rect", { fill: "var(--blue)", "fill-opacity": 0.55, stroke: "var(--card)", "stroke-width": 1.5 });
+  var t10 = el(svg1, "rect", { fill: "var(--blue)", "fill-opacity": 0.2, stroke: "var(--card)", "stroke-width": 1.5 });
+  var t01 = el(svg1, "rect", { fill: "var(--crimson)", "fill-opacity": 0.55, stroke: "var(--card)", "stroke-width": 1.5 });
+  var t00 = el(svg1, "rect", { fill: "var(--crimson)", "fill-opacity": 0.2, stroke: "var(--card)", "stroke-width": 1.5 });
+  var hi1 = el(svg1, "rect", { fill: "none", stroke: "var(--amber)", "stroke-width": 3, rx: 2 });
+  var hi2 = el(svg1, "rect", { fill: "none", stroke: "var(--amber)", "stroke-width": 3, rx: 2 });
+  function tileLab() { return txt(svg1, 0, 0, "", { "text-anchor": "middle", fill: "var(--ink)", style: "font-style: normal; font-size: 13px; font-variant-numeric: tabular-nums;" }); }
+  var l11 = tileLab(), l10 = tileLab(), l01 = tileLab(), l00 = tileLab();
+  var colLabL = txt(svg1, 0, PY0 - 10, "", { "class": "axis-label", "text-anchor": "middle" });
+  var colLabR = txt(svg1, 0, PY0 - 10, "", { "class": "axis-label", "text-anchor": "middle" });
+
+  txt(svg1, 16, 56, "the joint, as area", { "class": "axis-label" });
+  var LG = 84;
+  el(svg1, "rect", { x: 16, y: LG, width: 13, height: 13, fill: "var(--blue)", "fill-opacity": 0.55, rx: 2 });
+  txt(svg1, 36, LG + 11, "Y = 1 (width π)", { fill: "var(--ink-2)", "font-size": "13.5", style: "font-style: normal;" });
+  el(svg1, "rect", { x: 16, y: LG + 24, width: 13, height: 13, fill: "var(--crimson)", "fill-opacity": 0.55, rx: 2 });
+  txt(svg1, 36, LG + 35, "Y = 0 (width 1−π)", { fill: "var(--ink-2)", "font-size": "13.5", style: "font-style: normal;" });
+  txt(svg1, 16, LG + 60, "darker tiles — X = 1 (top)", { fill: "var(--ink-2)", "font-size": "13.5", style: "font-style: normal;" });
+  txt(svg1, 16, LG + 82, "lighter tiles — X = 0", { fill: "var(--ink-2)", "font-size": "13.5", style: "font-style: normal;" });
+
+  txt(svg1, 16, 218, "read off the areas", { "class": "axis-label" });
+  function valLine(y) { return txt(svg1, 16, y, "", { "class": "axis-label", style: "font-size: 14px; fill: var(--ink-2); font-variant-numeric: tabular-nums;" }); }
+  var vMu1 = valLine(244), vEta1 = valLine(268), vMu0 = valLine(300), vEta0 = valLine(324);
+  txt(svg1, 16, 366, "η(x) = ℙ(X=x, Y=1) ÷ μ(x)", { "class": "axis-label" });
+  txt(svg1, 16, 386, "— the blue share of the trace", { "class": "axis-label" });
+
+  var piS = document.getElementById("mopi"), p1S = document.getElementById("mop1"), p0S = document.getElementById("mop0");
+  var piV = document.getElementById("mopival"), p1V = document.getElementById("mop1val"), p0V = document.getElementById("mop0val");
+  var j11El = document.getElementById("moj11"), j10El = document.getElementById("moj10"),
+      j01El = document.getElementById("moj01"), j00El = document.getElementById("moj00");
+  var baseFlag = document.getElementById("mobase");
+  var hb1 = document.getElementById("mohx1"), hb0 = document.getElementById("mohx0");
+  var hxMode = 1;
+
+  function setRect(r, x, y, w, h) {
+    r.setAttribute("x", x); r.setAttribute("y", y);
+    r.setAttribute("width", Math.max(0, w)); r.setAttribute("height", Math.max(0, h));
+  }
+  function setLab(l, x, y, w, h, v) {
+    if (w > 54 && h > 26) { l.textContent = v.toFixed(2); l.setAttribute("x", x + w / 2); l.setAttribute("y", y + h / 2 + 5); }
+    else l.textContent = "";
+  }
+
+  function render1() {
+    var pi = parseFloat(piS.value), p1 = parseFloat(p1S.value), p0 = parseFloat(p0S.value);
+    piV.textContent = pi.toFixed(2); p1V.textContent = p1.toFixed(2); p0V.textContent = p0.toFixed(2);
+    var wL = pi * PW, wR = PW - wL, hL = p1 * PH, hR = p0 * PH;
+    setRect(t11, PX0, PY0, wL, hL);
+    setRect(t10, PX0, PY0 + hL, wL, PH - hL);
+    setRect(t01, PX0 + wL, PY0, wR, hR);
+    setRect(t00, PX0 + wL, PY0 + hR, wR, PH - hR);
+    var j11 = pi * p1, j10 = pi * (1 - p1), j01 = (1 - pi) * p0, j00 = (1 - pi) * (1 - p0);
+    setLab(l11, PX0, PY0, wL, hL, j11);
+    setLab(l10, PX0, PY0 + hL, wL, PH - hL, j10);
+    setLab(l01, PX0 + wL, PY0, wR, hR, j01);
+    setLab(l00, PX0 + wL, PY0 + hR, wR, PH - hR, j00);
+    colLabL.setAttribute("x", PX0 + wL / 2);
+    colLabL.textContent = wL > 64 ? "Y = 1" : "";
+    colLabR.setAttribute("x", PX0 + wL + wR / 2);
+    colLabR.textContent = wR > 64 ? "Y = 0" : "";
+    if (hxMode === 1) {
+      setRect(hi1, PX0 + 1.5, PY0 + 1.5, wL - 3, hL - 3);
+      setRect(hi2, PX0 + wL + 1.5, PY0 + 1.5, wR - 3, hR - 3);
+    } else {
+      setRect(hi1, PX0 + 1.5, PY0 + hL + 1.5, wL - 3, PH - hL - 3);
+      setRect(hi2, PX0 + wL + 1.5, PY0 + hR + 1.5, wR - 3, PH - hR - 3);
+    }
+    var mu1 = j11 + j01, mu0 = j10 + j00;
+    var eta1 = j11 / mu1, eta0 = j10 / mu0;
+    vMu1.textContent = "μ(1) = " + mu1.toFixed(3);
+    vEta1.textContent = "η(1) = " + eta1.toFixed(3);
+    vMu0.textContent = "μ(0) = " + mu0.toFixed(3);
+    vEta0.textContent = "η(0) = " + eta0.toFixed(3);
+    var act = hxMode === 1 ? [vMu1, vEta1] : [vMu0, vEta0];
+    [vMu1, vEta1, vMu0, vEta0].forEach(function (v) { v.style.fill = "var(--ink-2)"; });
+    act.forEach(function (v) { v.style.fill = "var(--amber)"; });
+    j11El.textContent = j11.toFixed(2); j10El.textContent = j10.toFixed(2);
+    j01El.textContent = j01.toFixed(2); j00El.textContent = j00.toFixed(2);
+    baseFlag.classList.toggle("on", p1 > p0 && eta1 < 0.5);
+  }
+  [piS, p1S, p0S].forEach(function (s) { s.addEventListener("input", render1); });
+  function setMode(m) {
+    hxMode = m;
+    hb1.classList.toggle("active", m === 1);
+    hb0.classList.toggle("active", m === 0);
+    render1();
+  }
+  hb1.addEventListener("click", function () { setMode(1); });
+  hb0.addEventListener("click", function () { setMode(0); });
+  document.getElementById("moexam").addEventListener("click", function () {
+    piS.value = 0.4; p1S.value = 0.8; p0S.value = 0.2; render1();
+  });
+  document.getElementById("morare").addEventListener("click", function () {
+    piS.value = 0.05; p1S.value = 0.9; p0S.value = 0.1; render1();
+  });
+  render1();
+
+  /* ---------- Figure 2: risk lines ---------- */
+  var svg2 = document.getElementById("rk-svg");
+  var m2 = { l: 54, r: 16, t: 18, b: 64 }, W2 = 760, H2 = 400;
+  var pw2 = W2 - m2.l - m2.r, ph2 = H2 - m2.t - m2.b;
+  var YMX = 1.5;
+  function rx(e) { return m2.l + e * pw2; }
+  function ry(v) { return m2.t + (1 - Math.min(v, YMX) / YMX) * ph2; }
+  [0, 0.5, 1, 1.5].forEach(function (v) {
+    el(svg2, "line", { x1: m2.l, y1: ry(v), x2: W2 - m2.r, y2: ry(v), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg2, m2.l - 7, ry(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+    el(svg2, "line", { x1: rx(v), y1: m2.t, x2: rx(v), y2: H2 - m2.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg2, rx(v), H2 - m2.b + 30, v, { "class": "axis-label", "text-anchor": "middle" });
+  });
+  txt(svg2, W2 - m2.r, H2 - 8, "posterior η", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg2, m2.l + 6, m2.t - 4, "conditional risk", { "class": "axis-label" });
+
+  var defs2 = el(svg2, "defs", {});
+  var clip2 = el(defs2, "clipPath", { id: "clipR" });
+  el(clip2, "rect", { x: m2.l, y: m2.t, width: pw2, height: ph2 });
+  var g2 = el(svg2, "g", { "clip-path": "url(#clipR)" });
+  var env = el(g2, "path", { fill: "var(--amber-soft)" });
+  var lineR1 = el(g2, "line", { stroke: "var(--blue)", "stroke-width": 2.4, "stroke-linecap": "round" });
+  var lineR0 = el(g2, "line", { stroke: "var(--crimson)", "stroke-width": 2.4, "stroke-linecap": "round" });
+  var envEdge = el(g2, "path", { fill: "none", stroke: "var(--amber)", "stroke-width": 2.2, "stroke-linecap": "round" });
+  var thrV = el(g2, "line", { stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "5 4", y1: m2.t, y2: H2 - m2.b });
+  var band0 = el(svg2, "rect", { y: H2 - m2.b - 9, height: 8, fill: "var(--crimson)", "fill-opacity": 0.4 });
+  var band1 = el(svg2, "rect", { y: H2 - m2.b - 9, height: 8, fill: "var(--blue)", "fill-opacity": 0.4 });
+  var thrLab = txt(svg2, 0, H2 - m2.b + 48, "1/(1+a)", { fill: "var(--amber)", "font-size": "13", "text-anchor": "middle", style: "font-style: normal;" });
+  var dot0 = el(svg2, "circle", { r: 7, stroke: "var(--card)", "stroke-width": 2 });
+  var dot1 = el(svg2, "circle", { r: 7, stroke: "var(--card)", "stroke-width": 2 });
+  var dot0Lab = txt(svg2, 0, 0, "η(0)", { "text-anchor": "middle", "font-size": "14" });
+  var dot1Lab = txt(svg2, 0, 0, "η(1)", { "text-anchor": "middle", "font-size": "14" });
+
+  var E0 = 1 / 7, E1 = 8 / 11, MU0 = 14 / 25, MU1 = 11 / 25;
+  var aS2 = document.getElementById("rka");
+  var aV2 = document.getElementById("rkaval");
+  var thrEl = document.getElementById("rkthr"), f0El = document.getElementById("rkf0"), f1El = document.getElementById("rkf1");
+  var riskEl = document.getElementById("rkrisk"), flipFlag = document.getElementById("rkflip");
+
+  function render2() {
+    var a = parseFloat(aS2.value);
+    aV2.textContent = a.toFixed(1);
+    var thr = 1 / (1 + a);
+    lineR1.setAttribute("x1", rx(0)); lineR1.setAttribute("y1", ry(1));
+    lineR1.setAttribute("x2", rx(1)); lineR1.setAttribute("y2", ry(0));
+    lineR0.setAttribute("x1", rx(0)); lineR0.setAttribute("y1", ry(0));
+    lineR0.setAttribute("x2", rx(1)); lineR0.setAttribute("y2", ry(a));
+    var peak = a * thr;
+    env.setAttribute("d", "M" + rx(0) + "," + ry(0) + " L" + rx(thr) + "," + ry(peak) + " L" + rx(1) + "," + ry(0) + " Z");
+    envEdge.setAttribute("d", "M" + rx(0) + "," + ry(0) + " L" + rx(thr) + "," + ry(peak) + " L" + rx(1) + "," + ry(0));
+    thrV.setAttribute("x1", rx(thr)); thrV.setAttribute("x2", rx(thr));
+    thrLab.setAttribute("x", Math.min(Math.max(rx(thr), m2.l + 34), W2 - m2.r - 34));
+    band0.setAttribute("x", rx(0)); band0.setAttribute("width", rx(thr) - rx(0));
+    band1.setAttribute("x", rx(thr)); band1.setAttribute("width", rx(1) - rx(thr));
+    var f0 = E0 >= thr ? 1 : 0, f1 = E1 >= thr ? 1 : 0;
+    var r0 = Math.min(a * E0, 1 - E0), r1 = Math.min(a * E1, 1 - E1);
+    dot0.setAttribute("cx", rx(E0)); dot0.setAttribute("cy", ry(r0));
+    dot1.setAttribute("cx", rx(E1)); dot1.setAttribute("cy", ry(r1));
+    dot0.setAttribute("fill", f0 ? "var(--blue)" : "var(--crimson)");
+    dot1.setAttribute("fill", f1 ? "var(--blue)" : "var(--crimson)");
+    dot0Lab.setAttribute("x", rx(E0)); dot0Lab.setAttribute("y", ry(r0) - 14);
+    dot1Lab.setAttribute("x", rx(E1)); dot1Lab.setAttribute("y", ry(r1) - 14);
+    thrEl.textContent = thr.toFixed(3);
+    f0El.textContent = f0; f1El.textContent = f1;
+    riskEl.textContent = (MU0 * r0 + MU1 * r1).toFixed(3);
+    flipFlag.classList.toggle("on", f0 === 1);
+  }
+  aS2.addEventListener("input", render2);
+  document.getElementById("rkp1").addEventListener("click", function () { aS2.value = 1; render2(); });
+  document.getElementById("rkp6").addEventListener("click", function () { aS2.value = 6; render2(); });
+  document.getElementById("rkp9").addEventListener("click", function () { aS2.value = 9; render2(); });
+  render2();
+
+  /* ---------- Figure 3: prior dial ---------- */
+  var svg3 = document.getElementById("pd-svg");
+  var m3 = { l: 54, r: 16, t: 20, b: 62 }, W3 = 760, H3 = 420;
+  var pw3 = W3 - m3.l - m3.r, ph3 = H3 - m3.t - m3.b;
+  function px(p) { return m3.l + p * pw3; }
+  function py(v) { return m3.t + (1 - v) * ph3; }
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+    el(svg3, "line", { x1: m3.l, y1: py(v), x2: W3 - m3.r, y2: py(v), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg3, m3.l - 7, py(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+    el(svg3, "line", { x1: px(v), y1: m3.t, x2: px(v), y2: H3 - m3.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg3, px(v), H3 - m3.b + 18, v, { "class": "axis-label", "text-anchor": "middle" });
+  });
+  txt(svg3, W3 - m3.r, H3 - 8, "prior π = ℙ(Y=1)", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg3, m3.l - 40, m3.t - 6, "posterior η", { "class": "axis-label" });
+  el(svg3, "line", { x1: px(0), y1: py(0), x2: px(1), y2: py(1), stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "5 4" });
+  txt(svg3, px(0.63), py(0.585), "uninformative: η = π", { "class": "axis-label" });
+
+  function eta1of(p) { return 4 * p / (1 + 3 * p); }
+  function eta0of(p) { return p / (4 - 3 * p); }
+  var d1p = "", d0p = "";
+  for (var i3 = 0; i3 <= 200; i3++) {
+    var pp = i3 / 200;
+    d1p += (i3 ? "L" : "M") + px(pp).toFixed(1) + "," + py(eta1of(pp)).toFixed(1);
+    d0p += (i3 ? "L" : "M") + px(pp).toFixed(1) + "," + py(eta0of(pp)).toFixed(1);
+  }
+  el(svg3, "path", { d: d1p, fill: "none", stroke: "var(--blue)", "stroke-width": 2.4, "stroke-linecap": "round" });
+  el(svg3, "path", { d: d0p, fill: "none", stroke: "var(--crimson)", "stroke-width": 2.4, "stroke-linecap": "round" });
+  txt(svg3, px(0.31), py(eta1of(0.31)) - 20, "η(1) = 4π/(1+3π)", { fill: "var(--blue)", "font-size": "14" });
+  txt(svg3, px(0.56), py(eta0of(0.56)) + 22, "η(0) = π/(4−3π)", { fill: "var(--crimson)", "font-size": "14" });
+
+  var thrH = el(svg3, "line", { stroke: "var(--amber)", "stroke-width": 1.6, "stroke-dasharray": "6 4", x1: m3.l, x2: W3 - m3.r });
+  var tip0 = el(svg3, "circle", { r: 6.5, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+  var tip1 = el(svg3, "circle", { r: 6.5, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+  var tip0L = txt(svg3, 0, H3 - m3.b + 36, "π₀*", { fill: "var(--amber)", "font-size": "14", "text-anchor": "middle", style: "font-style: normal;" });
+  var tip1L = txt(svg3, 0, H3 - m3.b + 36, "π₁*", { fill: "var(--amber)", "font-size": "14", "text-anchor": "middle", style: "font-style: normal;" });
+  var tip0D = el(svg3, "line", { stroke: "var(--amber)", "stroke-width": 1.2, "stroke-dasharray": "3 4" });
+  var tip1D = el(svg3, "line", { stroke: "var(--amber)", "stroke-width": 1.2, "stroke-dasharray": "3 4" });
+  var piMark = el(svg3, "line", { stroke: "var(--muted)", "stroke-width": 1.2, y1: m3.t, y2: H3 - m3.b });
+  var pm0 = el(svg3, "circle", { r: 6, stroke: "var(--card)", "stroke-width": 2 });
+  var pm1 = el(svg3, "circle", { r: 6, stroke: "var(--card)", "stroke-width": 2 });
+
+  var aS3 = document.getElementById("pda"), piS3 = document.getElementById("pdpi");
+  var aV3 = document.getElementById("pdaval"), piV3 = document.getElementById("pdpival");
+  var h0El3 = document.getElementById("pdh0"), h1El3 = document.getElementById("pdh1");
+  var t0El = document.getElementById("pdt0"), t1El = document.getElementById("pdt1");
+  var constFlag = document.getElementById("pdconst");
+
+  function render3() {
+    var a = parseFloat(aS3.value), pi = parseFloat(piS3.value);
+    aV3.textContent = a.toFixed(1); piV3.textContent = pi.toFixed(2);
+    var thr = 1 / (1 + a);
+    thrH.setAttribute("y1", py(thr)); thrH.setAttribute("y2", py(thr));
+    var t0 = 4 / (4 + a), t1 = 1 / (1 + 4 * a);
+    tip0.setAttribute("cx", px(t0)); tip0.setAttribute("cy", py(thr));
+    tip1.setAttribute("cx", px(t1)); tip1.setAttribute("cy", py(thr));
+    tip0L.setAttribute("x", px(t0));
+    tip1L.setAttribute("x", px(t1));
+    tip0D.setAttribute("x1", px(t0)); tip0D.setAttribute("x2", px(t0));
+    tip0D.setAttribute("y1", py(thr)); tip0D.setAttribute("y2", H3 - m3.b);
+    tip1D.setAttribute("x1", px(t1)); tip1D.setAttribute("x2", px(t1));
+    tip1D.setAttribute("y1", py(thr)); tip1D.setAttribute("y2", H3 - m3.b);
+    var h0 = eta0of(pi), h1 = eta1of(pi);
+    piMark.setAttribute("x1", px(pi)); piMark.setAttribute("x2", px(pi));
+    var f0 = h0 >= thr, f1 = h1 >= thr;
+    pm0.setAttribute("cx", px(pi)); pm0.setAttribute("cy", py(h0));
+    pm0.setAttribute("fill", f0 ? "var(--blue)" : "var(--crimson)");
+    pm1.setAttribute("cx", px(pi)); pm1.setAttribute("cy", py(h1));
+    pm1.setAttribute("fill", f1 ? "var(--blue)" : "var(--crimson)");
+    h0El3.textContent = h0.toFixed(3);
+    h1El3.textContent = h1.toFixed(3);
+    t0El.textContent = t0.toFixed(3);
+    t1El.textContent = t1.toFixed(3);
+    constFlag.classList.toggle("on", f0 === f1);
+  }
+  [aS3, piS3].forEach(function (s) { s.addEventListener("input", render3); });
+  document.getElementById("pdc").addEventListener("click", function () { aS3.value = 1; piS3.value = 0.8; render3(); });
+  render3();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · from the same exam: <a href="mockexam.html">all eight questions, worked</a> · related: <a href="matrices.html">matrix basics</a> · <a href="coefficients.html">reading coefficients</a></footer>
+</body>
+</html>
