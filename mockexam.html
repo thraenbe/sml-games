@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+<title>The Mock Exam, Worked — All Eight Questions in Detail</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .rubric {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0.2rem 0 1.05rem;
+  }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .fig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  @media (max-width: 720px) { .fig-grid { grid-template-columns: 1fr; } }
+  .fig-cell svg, .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 7rem; min-width: 6rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+  button.preset.active { border-color: var(--crimson); color: var(--crimson); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Mock Exam · July 2026 · All Eight Questions, Worked</p>
+  <h1>The whole course fits in eight questions.</h1>
+  <p class="lede">
+    The mock exam touches every block of the course — one perceptron run, four concept checks, a
+    Bayes decision, a fairness construction, benign overfitting, a stability proof, the AdaBoost
+    bound, and two VC dimensions. None of it is new: every question is a move from the sheets,
+    under a clock. This page works through all eight in full detail, with the official rubric's
+    point splits, and an interactive figure wherever a picture does the explaining.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>120 minutes · 34 points — about 3.5 min per point</span>
+    <span class="chip"><span class="dot c"></span>one handwritten A4 cheat sheet allowed</span>
+    <span class="chip"><span class="dot a"></span>no penalty on multiple choice — answer everything</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">Question 1 · 2 points · ≈5 min · easy</span>The perceptron algorithm by hand</h2>
+  <p>
+    Rules of the game: no offset, start at <var>w</var> &#61; (0, 0), sweep the points <em>in the
+    given order</em>, and repeat until a full sweep makes no update. A point counts as a mistake
+    when <var>y<sub>i</sub></var>⟨<var>w</var>, <var>x<sub>i</sub></var>⟩ ≤ 0 — note the
+    <strong>≤</strong>: the very first point is always a mistake, because
+    ⟨0, <var>x</var>₁⟩ &#61; 0. On a mistake, the update is
+  </p>
+  <p class="eq boxed"><var>w</var> ← <var>w</var> + <var>y<sub>i</sub></var><var>x<sub>i</sub></var></p>
+  <p>
+    — add the point if it is positive, subtract it if it is negative. That drags the boundary
+    toward classifying the offender correctly. The whole run is six rows of arithmetic: two
+    mistakes in sweep 1 (<var>x</var>₁ then <var>x</var>₂), then a completely clean pass, so the
+    algorithm stops with <strong><var>w</var> &#61; (2, 1) after 2 mistakes</strong>. Step through
+    it:
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · the run, step by step — watch <span class="tn"><var>w</var></span> drag the boundary</p>
+    <svg id="pc-svg" viewBox="0 0 760 430" role="img" aria-label="Three labeled points in the plane, the current weight vector as an amber arrow with its perpendicular decision boundary, and the worksheet table filling in as you step through the perceptron run"></svg>
+    <div class="controls">
+      <button class="preset" id="pcprev">← back</button>
+      <button class="preset" id="pcnext">step →</button>
+      <button class="preset" id="pcreset">reset</button>
+    </div>
+    <div class="readouts">
+      <span id="pcnote">start — w = (0, 0)</span>
+    </div>
+    <div class="readouts">
+      <span class="flag amber" id="pcstop">full sweep with no update — stop: final w = (2, 1), 2 mistakes</span>
+    </div>
+  </div>
+  <figcaption>
+    The amber arrow is <var>w</var>; the dashed line is its decision boundary
+    ⟨<var>w</var>, <var>x</var>⟩ &#61; 0, with the blue-tinted side predicted positive. On a
+    mistake the faded arrow shows the old <var>w</var> and the dashed amber segment is the added
+    ±<var>x<sub>i</sub></var>. The amber ring marks the point currently being tested.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p class="rubric">rubric · 0.5 + 0.5 for the running weights (1,2) and (2,1) · 1 for marking x₃ and all of sweep 2 as clean, so the run stops</p>
+  <p>
+    Exam habit worth stealing: write ⟨<var>w</var>, <var>x<sub>i</sub></var>⟩ <em>first</em>, then
+    multiply by <var>y<sub>i</sub></var>. The classic slip is on <var>x</var>₂ in sweep 2:
+    ⟨(2,1), (−1,1)⟩ &#61; −1 <em>looks</em> like a mistake, but <var>y</var>₂ &#61; −1 makes
+    <var>y</var>₂⟨<var>w</var>, <var>x</var>₂⟩ &#61; +1 &gt; 0 — correctly classified.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Question 2 · 4 points · ≈10 min · medium</span>Multiple choice: consistency &amp; generalization</h2>
+  <p>
+    Four items, exactly one correct answer each, <strong>no penalty for wrong answers</strong> —
+    so the only losing move is a blank. The four answers are
+    <strong>A, B, D, A</strong>:
+  </p>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">(1) Consistency → A</p>
+      <p>
+        Consistency is convergence of the <em>risk</em>: <var>R</var>(<var>f<sub>n</sub></var>) → <var>R</var><sup>*</sup>.
+        It does <em>not</em> require <var>f<sub>n</sub></var>(<var>x</var>) → <var>f</var><sup>*</sup>(<var>x</var>)
+        pointwise (B is a stronger, different statement). ERM over a fixed class converges to
+        best-in-class, not to Bayes (C). And no free lunch: there is no distribution-free rate (D).
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(2) Universal consistency → B</p>
+      <p>
+        Stone's theorem: <var>k</var>-NN with <var>k</var>(<var>n</var>) → ∞ and
+        <var>k</var>(<var>n</var>)/<var>n</var> → 0 is universally consistent. Fixed
+        <var>k</var> &#61; 1 is not — the neighbour noise never averages out (A). That same rule
+        refutes “no algorithm can” (C). And universal consistency is <em>asymptotic</em>: for any
+        fixed <var>n</var>, some distribution keeps you far from Bayes (D).
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(3) Two bounds → D</p>
+      <p>
+        Read rates off the formulas: ℰ<sub>A</sub> ∼ √(<var>d</var> ln <var>n</var> / <var>n</var>)
+        decays like 1/√<var>n</var> and grows like √<var>d</var>; ℰ<sub>B</sub> ∼ <var>d</var> ln <var>n</var> / <var>n</var>
+        decays like 1/<var>n</var> — faster in <var>n</var> — but grows <em>linearly</em> in
+        <var>d</var>. “Faster” is not “always smaller”: the figure below shows the constants
+        fighting back.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">(4) Sauer–Shelah → A</p>
+      <p>
+        For <var>n</var> ≥ <var>d</var> the growth function is bounded by
+        Σ<sub><var>i</var>≤<var>d</var></sub> (<sup><var>n</var></sup><sub><var>i</var></sub>) &#61; <var>O</var>(<var>n<sup>d</sup></var>)
+        — polynomial, which is exactly the exponential-worry (B) it rules out. Infinite VC
+        dimension means 2<sup><var>n</var></sup> labelings forever (C), and nothing requires ℱ to be
+        finite (D).
+      </p>
+    </div>
+  </div>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · item (3) — the two excess-risk bounds race in <span class="tn"><var>n</var></span> (δ = 0.05)</p>
+    <svg id="bd-svg" viewBox="0 0 760 360" role="img" aria-label="The slow square-root bound and the fast one-over-n bound plotted against sample size on a log axis, with a movable marker showing both values and the crossover point where the fast bound finally wins"></svg>
+    <div class="controls">
+      <label for="bdd">VC dimension d = <span id="bddval">5</span></label>
+      <input type="range" id="bdd" min="2" max="50" step="1" value="5" aria-label="VC dimension d">
+      <label for="bdn">marker n = <span id="bdnval">500</span></label>
+      <input type="range" id="bdn" min="2" max="5" step="0.01" value="2.7" aria-label="sample size marker, log scale">
+      <button class="preset" id="bdexam">the exam's numbers (d = 5, n = 500)</button>
+    </div>
+    <div class="readouts">
+      <span>ℰ_A = <b id="bdaval">–</b></span>
+      <span>ℰ_B = <b id="bdbval">–</b></span>
+      <span>crossover n* ≈ <b id="bdxval">–</b></span>
+      <span class="flag" id="bdflag">the “faster” bound is worse here — constants matter</span>
+    </div>
+  </div>
+  <figcaption>
+    Blue: ℰ<sub>A</sub> &#61; √((2<var>d</var> ln(2<var>n</var>/<var>d</var>) + ln(2/δ))/<var>n</var>).
+    Crimson: ℰ<sub>B</sub> &#61; (8<var>d</var> ln(<var>n</var>+1) + 4 ln(2/δ))/<var>n</var>. At the
+    exam's own numbers the 1/<var>n</var> bound loses (0.53 vs 0.34) — it only wins past the amber
+    crossover. That is why (A) is false and (D) is the answer.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p class="rubric">rubric · 1 point per item, no penalty · answers: (1) A · (2) B · (3) D · (4) A</p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Question 3 · 5 points · ≈12 min · medium</span>Cost-sensitive Bayes classification</h2>
+  <p>
+    Setup: prior ℙ(<var>Y</var>&#61;1) &#61; 2/5, class-conditionals
+    ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;1) &#61; 4/5 and
+    ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;0) &#61; 1/5. <strong>(a)</strong> is pure
+    bookkeeping — build the joint table by multiplying prior × conditional:
+    ℙ(1,1) &#61; 8/25, ℙ(0,1) &#61; 2/25, ℙ(1,0) &#61; 3/25, ℙ(0,0) &#61; 12/25. Sum columns for the
+    marginal, divide for the posterior:
+  </p>
+  <p class="eq">μ(1) &#61; 11/25, &nbsp; μ(0) &#61; 14/25, &nbsp; <span class="b">η(1) &#61; 8/11</span>, &nbsp; <span class="c">η(0) &#61; 1/7</span></p>
+  <p>
+    The 0–1 Bayes classifier thresholds η at ½: <var>f</var>°(1) &#61; 1, <var>f</var>°(0) &#61; 0,
+    and its error collects the losing posterior mass at each <var>x</var>:
+    Σ<sub><var>x</var></sub> μ(<var>x</var>) min(η, 1−η) &#61; 11/25 · 3/11 + 14/25 · 1/7 &#61; <strong>1/5</strong>.
+  </p>
+  <p>
+    <strong>(b)</strong> Asymmetric loss — a missed positive costs <var>a</var>, a false alarm
+    costs 1. Compare the two conditional risks: predicting 1 risks (1−η)·1, predicting 0 risks
+    η·<var>a</var>. Predict 1 whenever that is the cheaper side:
+  </p>
+  <p class="eq boxed">predict 1 &nbsp;⟺&nbsp; 1 − η(<var>x</var>) &lt; <var>a</var>&#8202;η(<var>x</var>) &nbsp;⟺&nbsp; η(<var>x</var>) &gt; 1/(1 + <var>a</var>)</p>
+  <p>
+    The threshold slides <em>down</em> from ½ as misses get pricier — with <var>a</var> &#61; 1 it
+    is the familiar ½ again. <strong>(c)</strong> keeps 0–1 loss but turns the prior π into a dial:
+    with the class-conditionals fixed, η(0) &#61; π / (4 − 3π), and the decision at
+    <var>x</var> &#61; 0 flips to 1 (ties toward 1) when η(0) ≥ ½ ⟺ π ≥ 4(1−π) ⟺
+    <strong>π ≥ 4/5</strong>. All three parts are the same picture — two posterior dots and one
+    threshold:
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 3 · the decision in one axis — posteriors <span class="tn">η(0), η(1)</span> vs the threshold <span class="tn">1/(1+<var>a</var>)</span></p>
+    <svg id="by-svg" viewBox="0 0 760 300" role="img" aria-label="A horizontal probability axis from zero to one with dots for the two posterior values and an amber threshold line; sliders move the cost asymmetry and the class prior, recoloring the dots by their predicted class"></svg>
+    <div class="controls">
+      <label for="bya">miss cost a = <span id="byaval">1.0</span></label>
+      <input type="range" id="bya" min="0.1" max="9" step="0.1" value="1" aria-label="cost of a missed positive">
+      <label for="bypi">prior π = ℙ(Y=1) = <span id="bypival">0.40</span></label>
+      <input type="range" id="bypi" min="0.05" max="0.95" step="0.01" value="0.4" aria-label="class prior pi">
+    </div>
+    <div class="controls" style="border-top: none; padding-top: 0;">
+      <button class="preset" id="bypa">part (a): a = 1, π = 2/5</button>
+      <button class="preset" id="bypc">part (c): the tipping prior π = 4/5</button>
+      <button class="preset" id="bypb">expensive misses: a = 4</button>
+    </div>
+    <div class="readouts">
+      <span>η(0) = <b id="byh0">–</b></span>
+      <span>η(1) = <b id="byh1">–</b></span>
+      <span>threshold = <b id="bythr">–</b></span>
+      <span>f(0) = <b id="byf0">–</b>, f(1) = <b id="byf1">–</b></span>
+      <span class="flag amber" id="bytip">x = 0 now predicts class 1</span>
+    </div>
+  </div>
+  <figcaption>
+    A dot right of the amber threshold predicts 1 (blue), left predicts 0 (crimson). Raising the
+    miss cost <var>a</var> slides the threshold left; raising the prior π slides both posteriors
+    right along η(1) &#61; 4π/(1+3π), η(0) &#61; π/(4−3π). Part (c) is the moment the η(0) dot
+    touches ½: exactly π &#61; 4/5.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p class="rubric">rubric · (a) 1 for η, 0.5 classifier, 0.5 Bayes error · (b) 1.5 for the threshold derivation · (c) 0.5 setting up η(0) ≥ ½, 1 for solving to π ≥ 4/5</p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Question 4 · 4 points · ≈10 min · transfer</span>ROC curves and fairness</h2>
+  <p>
+    Equalized odds asks for the <em>same</em> (FPR, TPR) operating point in both groups.
+    <strong>(a)</strong> is a trap dressed as a gift: the two groups' ROC curves <em>coincide</em>,
+    so surely one global threshold works? <strong>Not necessarily.</strong> A ROC curve fixes only
+    the <em>set</em> of reachable points — not <em>which threshold lands where</em>. If group 1's
+    scores are group 0's divided by two, the curves are identical but a single global threshold
+    puts the groups at different points of the shared curve, and equalized odds fails. (It is
+    guaranteed only when the per-label score distributions themselves coincide.)
+  </p>
+  <p>
+    <strong>(b)</strong> asks for the general fix. Draw the <var>A</var>&#61;1 curve strictly
+    below <var>A</var>&#61;0: each group can realize any point <em>on</em> its curve with a
+    deterministic threshold, and any point <em>below</em> it by randomizing between two
+    thresholds. So the feasible common points are the region between the diagonal and the
+    <em>lower</em> curve. Put the operating point on the <var>A</var>&#61;1 curve itself: the
+    harder group sits there deterministically, while <var>A</var>&#61;0 must <em>randomize</em> —
+    deliberately blunting its better classifier. That is the price of equalized odds, paid in
+    accuracy on the easier group.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 4 · part (b) — pick the common operating point, watch <span class="tn"><var>A</var>&#61;0</span> randomize</p>
+    <svg id="roc-svg" viewBox="0 0 760 420" role="img" aria-label="An ROC plot with the A equals zero curve above the A equals one curve, the feasible equalized-odds region shaded, an operating point sliding along the lower curve, and the chord showing how the upper group randomizes between two thresholds to reach it"></svg>
+    <div class="controls">
+      <label for="rocs">operating point along the A=1 curve</label>
+      <input type="range" id="rocs" min="0.05" max="0.95" step="0.01" value="0.45" aria-label="position of the common operating point">
+    </div>
+    <div class="readouts">
+      <span>common point: FPR = <b id="rocf">–</b>, TPR = <b id="roct">–</b></span>
+      <span>A=0 mixes its two thresholds with weight <b id="rocw">–</b></span>
+    </div>
+  </div>
+  <figcaption>
+    Blue: <var>A</var>&#61;0's ROC curve. Crimson: <var>A</var>&#61;1, strictly below. The amber
+    region between the diagonal and the lower curve is everything both groups can realize — the
+    equalized-odds menu. The amber dot is the shared operating point: <var>A</var>&#61;1 sits on
+    its own curve; <var>A</var>&#61;0 reaches the same point only as a lottery between the two
+    blue-ringed thresholds on the dashed chord (one of them may be the trivial “predict nothing”
+    corner).
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p class="rubric">rubric · (a) 0.5 verdict “not necessarily” + 1 reason (curves fix the set of points, not the threshold-to-point map) · (b) 1 valid strictly-lower curve + 1 common feasible point + 0.5 noting A=0 must randomize between two thresholds</p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Question 5 · 4 points · ≈9 min · medium</span>Spiky-smooth interpolation in high dimensions</h2>
+  <p>
+    The given tool is sphere concentration: two independent uniform unit directions in
+    ℝ<sup><var>d</var></sup> are nearly orthogonal,
+    ℙ(|⟨<var>u</var>, <var>v</var>⟩| &gt; <var>t</var>) ≤ 2<var>e</var><sup>−<var>cdt</var>²</sup>.
+    <strong>(a)</strong> One test direction against <var>n</var> training directions is a union
+    bound — multiply by <var>n</var>:
+  </p>
+  <p class="eq boxed">ℙ(∃ <var>i</var> ≤ <var>n</var> : |⟨<var>u</var>, <var>v<sub>i</sub></var>⟩| &gt; <var>t</var>) ≤ 2<var>n</var>&#8202;<var>e</var><sup>−<var>cdt</var>²</sup></p>
+  <p>
+    <strong>(b)</strong> When does that die? Take logs: ln(2<var>n</var>) − <var>cdt</var>² → −∞,
+    which holds whenever <var>d</var> ≫ log <var>n</var> / (<var>ct</var>²) — any growth with
+    <strong><var>d</var> / log <var>n</var> → ∞</strong> suffices. Dimension only needs to beat the
+    <em>logarithm</em> of the sample size. <strong>(c)</strong> The geometric punchline: with high
+    probability a fresh test point is nearly orthogonal to <em>every</em> training direction at
+    once. The interpolator can afford to be “spiky” — tall, narrow bumps that nail each noisy
+    training label — because those spikes have vanishing volume. A typical test point misses all
+    of them and lands on the smooth part, where the function is ≈ the truth. Zero training error
+    and small test risk, simultaneously.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 5 · the spiky-smooth cartoon — spikes shrink as <span class="tn"><var>d</var></span> grows</p>
+    <svg id="sp-svg" viewBox="0 0 760 320" role="img" aria-label="A one-dimensional cartoon: a smooth flat function with narrow spikes at the training points interpolating their noisy labels; a slider for the dimension narrows the spikes and a readout shows the union bound value"></svg>
+    <div class="controls">
+      <label for="spd">dimension d = 10^<span id="spdval">3</span></label>
+      <input type="range" id="spd" min="1" max="6" step="0.05" value="3" aria-label="dimension exponent">
+      <label for="spn">training points n = <span id="spnval">12</span></label>
+      <input type="range" id="spn" min="5" max="60" step="1" value="12" aria-label="number of training points">
+    </div>
+    <div class="readouts">
+      <span>union bound 2n·e^(−cdt²) ≈ <b id="spbound">–</b></span>
+      <span>d / ln n = <b id="spratio">–</b></span>
+      <span class="flag" id="spflag">bound ≥ 1 — vacuous: d must beat log n</span>
+      <span class="flag amber" id="spok">test point provably misses every spike (w.h.p.)</span>
+    </div>
+  </div>
+  <figcaption>
+    A 1-D cartoon of a <var>d</var>-dimensional phenomenon: the crimson spikes interpolate every
+    noisy label with zero training error, the blue line is the smooth part ≈ the truth, and the
+    amber dashed line is a fresh test point. As <var>d</var> grows (spike width drawn ∝ 1/√<var>d</var>),
+    the spikes' total volume vanishes while the bound 2<var>n</var><var>e</var><sup>−<var>cdt</var>²</sup>
+    collapses — add training points and you only pay a logarithm.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p class="rubric">rubric · (a) 1 for the union bound · (b) 1.5 for any correct sufficient condition (d/log n → ∞) · (c) 1.5: near-orthogonality + vanishing spike volume + “test prediction ≈ smooth part ≈ truth”</p>
+  <p>
+    This is Sheet 10's double-descent story in proof form — the same “benign overfitting” regime
+    the min-norm interpolator lives in on the <a href="matrices.html">matrix page</a>'s formulas.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Question 6 · 5 points · ≈12 min · medium</span>Algorithmic stability of the averaging rule</h2>
+  <p>
+    The rule ignores <var>x</var> entirely: <var>A</var>(<var>S</var>)(<var>x</var>) &#61; ȳ, the
+    label average, with labels in [0, 1] and squared loss. Swap example <var>i</var> for an
+    independent copy and follow the damage through three steps:
+  </p>
+  <p class="eq">
+    <span class="b">(a)</span> |<var>A</var>(<var>S</var>) − <var>A</var>(<var>S<sup>i</sup></var>)| &#61; (1/<var>n</var>)|<var>Y<sub>i</sub></var> − <var>Y<sub>i</sub></var>′| ≤ 1/<var>n</var>
+  </p>
+  <p>
+    — only one of the <var>n</var> summands changed, and by at most 1. <strong>(b)</strong> pushes
+    that through the squared loss with the difference-of-squares factorization (a sheet-5 classic):
+  </p>
+  <p class="eq boxed">|(ȳ − <var>y</var>)² − (ȳ′ − <var>y</var>)²| &#61; |ȳ − ȳ′| · |ȳ + ȳ′ − 2<var>y</var>| ≤ (1/<var>n</var>) · 2 &#61; 2/<var>n</var></p>
+  <p>
+    The first factor is (a); the second is at most 2 because every quantity lives in [0, 1]. Hence
+    Δ<sub>sup</sub> ≤ 2/<var>n</var>. <strong>(c)</strong> is the payoff via the
+    stability–generalization lemma: the expected gap between true and empirical risk equals the
+    average stability, and |Δ<sub>av</sub>| ≤ Δ<sub>sup</sub>, so
+  </p>
+  <p class="eq">| 𝔼[<var>R</var>(<var>A</var>(<var>S</var>)) − <var>R̂<sub>n</sub></var>(<var>A</var>(<var>S</var>))] | ≤ 2/<var>n</var> → 0</p>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">What it does say</p>
+      <p>
+        The training error of the averaging rule <em>tracks</em> its true risk to within
+        2/<var>n</var> in expectation. The rule cannot overfit: nothing it shows you in-sample is
+        an illusion.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">What it does not say</p>
+      <p>
+        That the risk is <em>small</em>. A constant predictor has huge approximation error whenever
+        the regression function actually varies. Stability kills the estimation gap, not the bias —
+        the exam explicitly rewards saying so.
+      </p>
+    </div>
+  </div>
+  <p class="rubric">rubric · (a) 1 · (b) 1 factoring + 1 bounding the two factors · (c) 1 invoking the lemma with |Δ_av| ≤ Δ_sup, 1 concluding the ≤ 2/n gap</p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Question 7 · 4 points · ≈9 min · medium</span>AdaBoost and the training-error bound</h2>
+  <p>
+    Two steps, each one inequality long. <strong>(a)</strong> A point is misclassified by
+    sign(<var>f<sub>T</sub></var>) exactly when its margin <var>z</var> &#61; <var>y<sub>i</sub></var><var>f<sub>T</sub></var>(<var>x<sub>i</sub></var>)
+    is ≤ 0, and the indicator of that event is dominated by the exponential:
+    𝟙{<var>z</var> ≤ 0} ≤ <var>e</var><sup>−<var>z</var></sup>. Average over the points and the
+    right side is exactly the potential:
+  </p>
+  <p class="eq boxed"><var>R̂<sub>n</sub></var>(sign <var>f<sub>T</sub></var>) ≤ (1/<var>n</var>) Σ<sub><var>i</var></sub> <var>e</var><sup>−<var>y<sub>i</sub>f<sub>T</sub></var>(<var>x<sub>i</sub></var>)</sup> &#61; <var>Z<sub>T</sub></var></p>
+  <p>
+    <strong>(b)</strong> Since <var>Z</var>₀ &#61; 1, telescope the potential:
+    <var>Z<sub>T</sub></var> &#61; ∏<sub><var>t</var></sub> (<var>Z<sub>t</sub></var>/<var>Z</var><sub><var>t</var>−1</sub>) &#61; ∏<sub><var>t</var></sub> 2√(ε<sub><var>t</var></sub>(1−ε<sub><var>t</var></sub>)).
+    With an edge, ε<sub><var>t</var></sub> ≤ ½ − γ, each factor is
+    2√(ε(1−ε)) &#61; √(1 − 4γ<sub><var>t</var></sub>²) ≤ √(1 − 4γ²) ≤ <var>e</var><sup>−2γ²</sup>
+    (using 1 + <var>u</var> ≤ <var>e<sup>u</sup></var>), so <var>T</var> rounds multiply to
+    <var>R̂<sub>n</sub></var> ≤ <var>e</var><sup>−2γ²<var>T</var></sup>.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 6 · the two inequalities of the proof</p>
+    <div class="fig-grid">
+      <div class="fig-cell"><svg id="ind-svg" viewBox="0 0 440 300" role="img" aria-label="The zero-one indicator step function sitting below the exponential of minus z, the domination that starts the proof"></svg></div>
+      <div class="fig-cell"><svg id="fac-svg" viewBox="0 0 440 300" role="img" aria-label="The per-round factor two root epsilon times one minus epsilon as a curve peaking at one for epsilon one half, with the edge gamma marking where the factor drops below its exponential bound"></svg></div>
+    </div>
+    <div class="controls">
+      <label for="fgam">edge γ = <span id="fgamval">0.10</span></label>
+      <input type="range" id="fgam" min="0.02" max="0.45" step="0.01" value="0.1" aria-label="edge gamma">
+    </div>
+    <div class="readouts">
+      <span>factor at ε = ½−γ: √(1−4γ²) = <b id="ffac">–</b></span>
+      <span>bound e^(−2γ²) = <b id="fbnd">–</b></span>
+      <span>after T rounds: e^(−2γ²T)</span>
+    </div>
+  </div>
+  <figcaption>
+    Left: 𝟙{<var>z</var> ≤ 0} (crimson) never exceeds <var>e</var><sup>−<var>z</var></sup> (blue) —
+    averaging this inequality is the whole of part (a). Right: the per-round factor
+    2√(ε(1−ε)) (crimson) equals 1 at ε &#61; ½ — a coin-flip learner makes no progress — and any
+    edge γ pushes it under the amber line <var>e</var><sup>−2γ²</sup>, whose <var>T</var>-th power
+    is the exponential clock from <a href="adaboost.html">the AdaBoost page</a>.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p class="rubric">rubric · (a) 1.5 for the 𝟙 ≤ exp step · (b) 2.5 for telescoping Z_T = ∏ 2√(ε(1−ε)) and √(1−4γ²) ≤ e^(−2γ²)</p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Question 8 · 6 points · ≈14 min · hard</span>VC dimension of interval classifiers</h2>
+  <p>
+    ℱ₁ &#61; single closed intervals, ℱ₂ &#61; unions of at most two. The key reduction: on a fixed
+    ordered point set, an interval classifier can only mark a <em>contiguous block</em> positive —
+    so counting labelings is counting blocks. <strong>(a)</strong> The empty labeling (1 way) plus
+    a block for every pair of endpoints <var>i</var> ≤ <var>j</var>:
+  </p>
+  <p class="eq boxed">𝒩(ℱ₁, <var>n</var>) &#61; 1 + <var>n</var> + ½<var>n</var>(<var>n</var>−1) &nbsp; ⟹ &nbsp; VC(ℱ₁) &#61; 2</p>
+  <p>
+    (For <var>n</var> &#61; 2: 4 &#61; 2² — shattered; for <var>n</var> &#61; 3: 7 &lt; 8 — the
+    labeling +,−,+ is unreachable.) <strong>(b)</strong> With two intervals the currency is
+    <em>positive runs</em>: maximal consecutive blocks of +. Any labeling of 4 ordered points has
+    at most 2 positive runs — the worst case is +,−,+,− — and two intervals cover two runs, so all
+    2⁴ &#61; 16 labelings are realizable: VC(ℱ₂) ≥ 4. <strong>(c)</strong> On any 5 points, the
+    alternating labeling +,−,+,−,+ has <em>three</em> separated positive runs, which no union of
+    two intervals can produce. So no 5-set is shattered and VC(ℱ₂) &#61; 4. Try to beat it:
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 7 · the shatter lab — click labels, count positive runs</p>
+    <svg id="vc-svg" viewBox="0 0 760 300" role="img" aria-label="Four or five points on a line with clickable plus or minus labels; amber intervals cover each run of consecutive positives and readouts show whether one or two intervals suffice"></svg>
+    <div class="controls">
+      <button class="preset" id="vc4">4 points</button>
+      <button class="preset active" id="vc5">5 points</button>
+      <button class="preset" id="vckill">the killer labeling + − + − +</button>
+      <span style="font-family: ui-monospace, Menlo, monospace; font-size: 0.78rem; color: var(--ink-2);">click a point to flip its label</span>
+    </div>
+    <div class="readouts">
+      <span>positive runs = <b id="vcruns">–</b></span>
+      <span>𝒩(ℱ₁, n) = <b id="vcgrow">–</b> of <b id="vcall">–</b> labelings</span>
+      <span class="flag amber" id="vcok1">1 run — even a single interval (ℱ₁) realizes this</span>
+      <span class="flag amber" id="vcok2">≤ 2 runs — ℱ₂ realizes this labeling</span>
+      <span class="flag" id="vcbad">3 runs — needs 3 intervals: ℱ₂ cannot produce this</span>
+    </div>
+  </div>
+  <figcaption>
+    Each amber bracket covers one maximal run of positives — that is the interval a union-of-intervals
+    classifier must spend. With 4 points you can click forever and never need more than two. With
+    5, the alternating labeling forces three, and that single labeling is the whole proof of
+    VC(ℱ₂) ≤ 4.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <p class="rubric">rubric · (a) 1 counting argument + 1 for VC(ℱ₁) = 2 · (b) 2 for a valid 4-point shattering via the ≤ 2-runs argument · (c) 2 for the alternating 5-point labeling</p>
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> Thirty-four points, and not one of them asks for
+      anything the sheets didn't rehearse: a perceptron sweep is Sheet 4, the bounds race is
+      Sheets 3–4, Bayes thresholds are the opening lectures, stability is Sheet 5 verbatim
+      (“adapted from Sheet 5”, says the exam itself), the AdaBoost bound is Sheet 8's Exercise 4,
+      VC of intervals is Sheet 4 again, and spiky-smooth is Sheet 10's double descent in proof
+      form. The exam-day skills are logistical: budget ≈ 3.5 minutes per point and move on; never
+      leave a multiple-choice blank; on “show that” questions, name the one identity that does the
+      work (union bound, difference of squares, 𝟙 ≤ exp, telescoping) and let the bookkeeping
+      follow. The cheat sheet you are allowed to bring is precisely one A4 page of such identities
+      — this page is a reasonable draft of it.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+  function fmt(v, dec) {
+    var s = v.toFixed(dec === undefined ? 2 : dec);
+    if (parseFloat(s) === 0) s = s.replace("-", "");
+    return s.replace("-", "−");
+  }
+  function monoAttr(size, fill) {
+    return { "class": "axis-label", style: "font-size: " + size + "px; fill: " + (fill || "var(--ink-2)") + ";" };
+  }
+
+  /* ---------- Figure 1: perceptron stepper ---------- */
+  var svg1 = document.getElementById("pc-svg");
+  var PX0 = 316, PW = 380, PY0 = 24, PH = 380;
+  var LO = -2.8, HI = 3.2;
+  function gx(x) { return PX0 + ((x - LO) / (HI - LO)) * PW; }
+  function gy(y) { return PY0 + ((HI - y) / (HI - LO)) * PH; }
+
+  var defs1 = el(svg1, "defs", {});
+  var clip1 = el(defs1, "clipPath", { id: "clipP" });
+  el(clip1, "rect", { x: PX0, y: PY0, width: PW, height: PH });
+  function marker(defs, id, color) {
+    var m = el(defs, "marker", { id: id, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" });
+    el(m, "path", { d: "M0,0 L10,5 L0,10 z", fill: color });
+  }
+  marker(defs1, "arrA1", "var(--amber)");
+
+  el(svg1, "rect", { x: PX0, y: PY0, width: PW, height: PH, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  var g1 = el(svg1, "g", { "clip-path": "url(#clipP)" });
+  el(g1, "line", { x1: gx(LO), y1: gy(0), x2: gx(HI), y2: gy(0), stroke: "var(--grid)", "stroke-width": 1 });
+  el(g1, "line", { x1: gx(0), y1: gy(LO), x2: gx(0), y2: gy(HI), stroke: "var(--grid)", "stroke-width": 1 });
+
+  var half = el(g1, "path", { fill: "var(--blue-soft)" });
+  var bdry = el(g1, "line", { stroke: "var(--ink)", "stroke-width": 1.3, "stroke-dasharray": "6 4" });
+  var wPrevArr = el(g1, "line", { stroke: "var(--amber)", "stroke-width": 2, "stroke-opacity": 0.35 });
+  var updSeg = el(g1, "line", { stroke: "var(--amber)", "stroke-width": 1.6, "stroke-dasharray": "4 4" });
+  var wArr = el(g1, "line", { stroke: "var(--amber)", "stroke-width": 3, "marker-end": "url(#arrA1)" });
+  var wLab = txt(g1, 0, 0, "w", { fill: "var(--amber)", "font-size": "16", "font-weight": "bold" });
+
+  var PPTS = [
+    { x: 1, y: 2, s: 1, lab: "x₁ (+)", dx: 10, dy: -10 },
+    { x: -1, y: 1, s: -1, lab: "x₂ (−)", dx: -66, dy: -10 },
+    { x: 2, y: -1, s: 1, lab: "x₃ (+)", dx: 10, dy: 18 }
+  ];
+  var rings = [];
+  PPTS.forEach(function (p) {
+    var cx = gx(p.x), cy = gy(p.y), L = 8;
+    rings.push(el(g1, "circle", { cx: cx, cy: cy, r: 15, fill: "none", stroke: "var(--amber)", "stroke-width": 2.5, visibility: "hidden" }));
+    if (p.s > 0) {
+      el(g1, "line", { x1: cx - L, y1: cy, x2: cx + L, y2: cy, stroke: "var(--blue)", "stroke-width": 3.5, "stroke-linecap": "round" });
+      el(g1, "line", { x1: cx, y1: cy - L, x2: cx, y2: cy + L, stroke: "var(--blue)", "stroke-width": 3.5, "stroke-linecap": "round" });
+      txt(g1, cx + p.dx, cy + p.dy, p.lab, { fill: "var(--blue)", "font-size": "14" });
+    } else {
+      el(g1, "line", { x1: cx - L, y1: cy, x2: cx + L, y2: cy, stroke: "var(--crimson)", "stroke-width": 3.5, "stroke-linecap": "round" });
+      txt(g1, cx + p.dx, cy + p.dy, p.lab, { fill: "var(--crimson)", "font-size": "14" });
+    }
+  });
+  var noW = txt(g1, gx(0.2), gy(-1.9), "w = 0 — no boundary yet", monoAttr(11, "var(--muted)"));
+
+  txt(svg1, 16, 40, "the worksheet", { "class": "axis-label" });
+  var COLX = [16, 60, 150, 205];
+  txt(svg1, COLX[0], 66, "s·i", monoAttr(11, "var(--muted)"));
+  txt(svg1, COLX[1], 66, "y⟨w,xᵢ⟩", monoAttr(11, "var(--muted)"));
+  txt(svg1, COLX[2], 66, "mist?", monoAttr(11, "var(--muted)"));
+  txt(svg1, COLX[3], 66, "w after", monoAttr(11, "var(--muted)"));
+  el(svg1, "line", { x1: 16, y1: 76, x2: 290, y2: 76, stroke: "var(--line)", "stroke-width": 1 });
+  var ROWS = [
+    ["1·1", "0", "yes", "(1, 2)"],
+    ["1·2", "−1", "yes", "(2, 1)"],
+    ["1·3", "3", "no", "(2, 1)"],
+    ["2·1", "4", "no", "(2, 1)"],
+    ["2·2", "1", "no", "(2, 1)"],
+    ["2·3", "3", "no", "stop"]
+  ];
+  var rowEls = [], rowHls = [];
+  ROWS.forEach(function (r, ri) {
+    var y = 100 + ri * 27;
+    rowHls.push(el(svg1, "rect", { x: 10, y: y - 17, width: 286, height: 24, rx: 4, fill: "var(--amber-soft)", visibility: "hidden" }));
+    var cells = [];
+    r.forEach(function (v, ci) {
+      cells.push(txt(svg1, COLX[ci], y, "–", monoAttr(12.5, "var(--ink)")));
+    });
+    rowEls.push(cells);
+  });
+  el(svg1, "line", { x1: 16, y1: 100 + 2 * 27 + 12, x2: 290, y2: 100 + 2 * 27 + 12, stroke: "var(--line)", "stroke-width": 1, "stroke-dasharray": "3 3" });
+  txt(svg1, 16, 316, "legend", { "class": "axis-label" });
+  txt(svg1, 16, 340, "amber arrow — current w", { fill: "var(--amber)", "font-size": "13.5" });
+  txt(svg1, 16, 362, "dashed line — ⟨w, x⟩ = 0", { fill: "var(--ink-2)", "font-size": "13.5" });
+  txt(svg1, 16, 384, "tinted side — predicted +", { fill: "var(--blue)", "font-size": "13.5" });
+
+  var STATES = [
+    { w: [0, 0], i: -1, note: "start — w = (0, 0): every margin is 0, so the first point must be a mistake" },
+    { w: [1, 2], wp: [0, 0], i: 0, note: "y₁⟨w, x₁⟩ = (+1)·0 = 0 ≤ 0 → mistake · w ← (0,0) + (+1)(1,2) = (1, 2)" },
+    { w: [2, 1], wp: [1, 2], i: 1, note: "y₂⟨w, x₂⟩ = (−1)·(1) = −1 ≤ 0 → mistake · w ← (1,2) + (−1)(−1,1) = (2, 1)" },
+    { w: [2, 1], i: 2, note: "y₃⟨w, x₃⟩ = (+1)·3 = 3 > 0 → correct, no update" },
+    { w: [2, 1], i: 0, note: "sweep 2 · y₁⟨w, x₁⟩ = 4 > 0 → correct" },
+    { w: [2, 1], i: 1, note: "sweep 2 · y₂⟨w, x₂⟩ = (−1)·(−1) = 1 > 0 → correct — the classic trap: ⟨w,x₂⟩ < 0 but y₂ = −1" },
+    { w: [2, 1], i: 2, note: "sweep 2 · y₃⟨w, x₃⟩ = 3 > 0 → correct — full clean sweep: stop" }
+  ];
+  var pcStep = 0;
+  var noteEl = document.getElementById("pcnote"), stopFlag = document.getElementById("pcstop");
+
+  function renderPC() {
+    var st = STATES[pcStep];
+    var w = st.w, nrm = Math.hypot(w[0], w[1]);
+    if (nrm > 1e-9) {
+      var tvx = -w[1] / nrm, tvy = w[0] / nrm, nx = w[0] / nrm, ny = w[1] / nrm, L = 12;
+      bdry.setAttribute("x1", gx(-L * tvx)); bdry.setAttribute("y1", gy(-L * tvy));
+      bdry.setAttribute("x2", gx(L * tvx)); bdry.setAttribute("y2", gy(L * tvy));
+      half.setAttribute("d",
+        "M" + gx(-L * tvx) + "," + gy(-L * tvy) +
+        " L" + gx(L * tvx) + "," + gy(L * tvy) +
+        " L" + gx(L * tvx + L * nx) + "," + gy(L * tvy + L * ny) +
+        " L" + gx(-L * tvx + L * nx) + "," + gy(-L * tvy + L * ny) + " Z");
+      bdry.setAttribute("visibility", "visible");
+      half.setAttribute("visibility", "visible");
+      wArr.setAttribute("x1", gx(0)); wArr.setAttribute("y1", gy(0));
+      wArr.setAttribute("x2", gx(w[0])); wArr.setAttribute("y2", gy(w[1]));
+      wArr.setAttribute("visibility", "visible");
+      wLab.setAttribute("x", gx(w[0]) + 10); wLab.setAttribute("y", gy(w[1]) - 8);
+      wLab.setAttribute("visibility", "visible");
+      noW.setAttribute("visibility", "hidden");
+    } else {
+      bdry.setAttribute("visibility", "hidden");
+      half.setAttribute("visibility", "hidden");
+      wArr.setAttribute("visibility", "hidden");
+      wLab.setAttribute("visibility", "hidden");
+      noW.setAttribute("visibility", "visible");
+    }
+    if (st.wp) {
+      wPrevArr.setAttribute("x1", gx(0)); wPrevArr.setAttribute("y1", gy(0));
+      wPrevArr.setAttribute("x2", gx(st.wp[0])); wPrevArr.setAttribute("y2", gy(st.wp[1]));
+      updSeg.setAttribute("x1", gx(st.wp[0])); updSeg.setAttribute("y1", gy(st.wp[1]));
+      updSeg.setAttribute("x2", gx(st.w[0])); updSeg.setAttribute("y2", gy(st.w[1]));
+      wPrevArr.setAttribute("visibility", Math.hypot(st.wp[0], st.wp[1]) > 1e-9 ? "visible" : "hidden");
+      updSeg.setAttribute("visibility", "visible");
+    } else {
+      wPrevArr.setAttribute("visibility", "hidden");
+      updSeg.setAttribute("visibility", "hidden");
+    }
+    rings.forEach(function (r, ri) { r.setAttribute("visibility", ri === st.i ? "visible" : "hidden"); });
+    rowEls.forEach(function (cells, ri) {
+      var done = ri < pcStep;
+      cells.forEach(function (c, ci) { c.textContent = done ? ROWS[ri][ci] : "–"; });
+      rowHls[ri].setAttribute("visibility", ri === pcStep - 1 ? "visible" : "hidden");
+    });
+    noteEl.textContent = st.note;
+    stopFlag.classList.toggle("on", pcStep === 6);
+  }
+  document.getElementById("pcnext").addEventListener("click", function () { if (pcStep < 6) pcStep++; renderPC(); });
+  document.getElementById("pcprev").addEventListener("click", function () { if (pcStep > 0) pcStep--; renderPC(); });
+  document.getElementById("pcreset").addEventListener("click", function () { pcStep = 0; renderPC(); });
+  renderPC();
+
+  /* ---------- Figure 2: bounds race ---------- */
+  var svg2 = document.getElementById("bd-svg");
+  var m2 = { l: 54, r: 16, t: 20, b: 46 }, W2 = 760, H2 = 360;
+  var pw2 = W2 - m2.l - m2.r, ph2 = H2 - m2.t - m2.b;
+  var ULO = 2, UHI = 5, YMAX2 = 1.2;
+  function bx(u) { return m2.l + ((u - ULO) / (UHI - ULO)) * pw2; }
+  function by(v) { return m2.t + (1 - Math.min(v, YMAX2) / YMAX2) * ph2; }
+  var DEL2 = Math.log(2 / 0.05);
+  function eA(n, d) { return Math.sqrt((2 * d * Math.log(2 * n / d) + DEL2) / n); }
+  function eB(n, d) { return (8 * d * Math.log(n + 1) + 4 * DEL2) / n; }
+
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+    el(svg2, "line", { x1: m2.l, y1: by(v), x2: W2 - m2.r, y2: by(v), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg2, m2.l - 7, by(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  var XT = { 2: "10²", 3: "10³", 4: "10⁴", 5: "10⁵" };
+  for (var u2 = 2; u2 <= 5; u2++) {
+    el(svg2, "line", { x1: bx(u2), y1: m2.t, x2: bx(u2), y2: H2 - m2.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svg2, bx(u2), H2 - m2.b + 18, XT[u2], { "class": "axis-label", "text-anchor": "middle" });
+  }
+  txt(svg2, W2 - m2.r, H2 - 8, "n (log scale)", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg2, m2.l - 40, m2.t - 6, "excess-risk bound", { "class": "axis-label" });
+  txt(svg2, W2 - m2.r - 14, m2.t + 22, "ℰ_A ∼ √(d ln n / n)", { fill: "var(--blue)", "font-size": "14", "text-anchor": "end" });
+  txt(svg2, W2 - m2.r - 14, m2.t + 44, "ℰ_B ∼ d ln n / n", { fill: "var(--crimson)", "font-size": "14", "text-anchor": "end" });
+
+  var clip2b = el(el(svg2, "defs", {}), "clipPath", { id: "clipB" });
+  el(clip2b, "rect", { x: m2.l, y: m2.t, width: pw2, height: ph2 });
+  var g2 = el(svg2, "g", { "clip-path": "url(#clipB)" });
+  var pathA = el(g2, "path", { fill: "none", stroke: "var(--blue)", "stroke-width": 2.4, "stroke-linecap": "round" });
+  var pathB = el(g2, "path", { fill: "none", stroke: "var(--crimson)", "stroke-width": 2.4, "stroke-linecap": "round" });
+  var xMark = el(g2, "line", { stroke: "var(--amber)", "stroke-width": 1.5, "stroke-dasharray": "4 4", y1: m2.t, y2: H2 - m2.b });
+  var xDot = el(g2, "circle", { r: 5.5, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+  var nMark = el(g2, "line", { stroke: "var(--muted)", "stroke-width": 1.2, y1: m2.t, y2: H2 - m2.b });
+  var dotA = el(g2, "circle", { r: 5, fill: "var(--blue)", stroke: "var(--card)", "stroke-width": 2 });
+  var dotB = el(g2, "circle", { r: 5, fill: "var(--crimson)", stroke: "var(--card)", "stroke-width": 2 });
+
+  var dS = document.getElementById("bdd"), nS = document.getElementById("bdn");
+  var dV = document.getElementById("bddval"), nV = document.getElementById("bdnval");
+  var aEl = document.getElementById("bdaval"), bEl = document.getElementById("bdbval"), xEl = document.getElementById("bdxval");
+  var bdFlag = document.getElementById("bdflag");
+
+  function render2() {
+    var d = parseInt(dS.value, 10), un = parseFloat(nS.value), n = Math.round(Math.pow(10, un));
+    dV.textContent = d; nV.textContent = n;
+    var dA = "", dB = "";
+    for (var i = 0; i <= 200; i++) {
+      var uu = ULO + (i / 200) * (UHI - ULO), nn = Math.pow(10, uu);
+      dA += (i ? "L" : "M") + bx(uu).toFixed(1) + "," + by(eA(nn, d)).toFixed(1);
+      dB += (i ? "L" : "M") + bx(uu).toFixed(1) + "," + by(eB(nn, d)).toFixed(1);
+    }
+    pathA.setAttribute("d", dA);
+    pathB.setAttribute("d", dB);
+    var ux = null;
+    for (i = 0; i <= 600; i++) {
+      var uc = ULO + (i / 600) * (UHI - ULO);
+      if (eB(Math.pow(10, uc), d) <= eA(Math.pow(10, uc), d)) { ux = uc; break; }
+    }
+    if (ux !== null) {
+      xMark.setAttribute("visibility", "visible"); xDot.setAttribute("visibility", "visible");
+      xMark.setAttribute("x1", bx(ux)); xMark.setAttribute("x2", bx(ux));
+      xDot.setAttribute("cx", bx(ux)); xDot.setAttribute("cy", by(eA(Math.pow(10, ux), d)));
+      var nx = Math.pow(10, ux);
+      xEl.textContent = nx >= 10000 ? Math.round(nx / 1000) + "k" : Math.round(nx);
+    } else {
+      xMark.setAttribute("visibility", "hidden"); xDot.setAttribute("visibility", "hidden");
+      xEl.textContent = "> 10⁵";
+    }
+    var vA = eA(n, d), vB = eB(n, d);
+    nMark.setAttribute("x1", bx(un)); nMark.setAttribute("x2", bx(un));
+    dotA.setAttribute("cx", bx(un)); dotA.setAttribute("cy", by(vA));
+    dotB.setAttribute("cx", bx(un)); dotB.setAttribute("cy", by(vB));
+    aEl.textContent = vA.toFixed(2);
+    bEl.textContent = vB.toFixed(2);
+    bdFlag.classList.toggle("on", vB > vA);
+  }
+  [dS, nS].forEach(function (s) { s.addEventListener("input", render2); });
+  document.getElementById("bdexam").addEventListener("click", function () { dS.value = 5; nS.value = Math.log10(500); render2(); });
+  render2();
+
+  /* ---------- Figure 3: Bayes threshold dial ---------- */
+  var svg3 = document.getElementById("by-svg");
+  var AX0 = 60, AX1 = 700, AY = 150;
+  function ax(v) { return AX0 + v * (AX1 - AX0); }
+  var band0 = el(svg3, "rect", { x: AX0, y: AY - 16, height: 32, fill: "var(--crimson-soft)", rx: 4 });
+  var band1 = el(svg3, "rect", { y: AY - 16, height: 32, fill: "var(--blue-soft)", rx: 4 });
+  el(svg3, "line", { x1: AX0, y1: AY, x2: AX1, y2: AY, stroke: "var(--muted)", "stroke-width": 1.5 });
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+    el(svg3, "line", { x1: ax(v), y1: AY - 6, x2: ax(v), y2: AY + 6, stroke: "var(--muted)", "stroke-width": 1.2 });
+    txt(svg3, ax(v), AY + 44, v, { "class": "axis-label", "text-anchor": "middle" });
+  });
+  txt(svg3, AX1 + 20, AY + 44, "η", { "class": "axis-label" });
+  txt(svg3, AX0, 40, "predict 0 side", { fill: "var(--crimson)", "font-size": "13.5" });
+  txt(svg3, AX1, 40, "predict 1 side", { fill: "var(--blue)", "font-size": "13.5", "text-anchor": "end" });
+  var thrLine = el(svg3, "line", { y1: 60, y2: AY + 56, stroke: "var(--amber)", "stroke-width": 2, "stroke-dasharray": "5 4" });
+  var thrLab = txt(svg3, 0, 260, "threshold 1/(1+a)", { fill: "var(--amber)", "font-size": "13.5", "text-anchor": "middle" });
+  var d0 = el(svg3, "circle", { cy: AY, r: 9, stroke: "var(--ink)", "stroke-width": 1.6 });
+  var d1 = el(svg3, "circle", { cy: AY, r: 9, stroke: "var(--ink)", "stroke-width": 1.6 });
+  var d0lab = txt(svg3, 0, AY - 22, "η(0)", { "text-anchor": "middle", "font-size": "15" });
+  var d1lab = txt(svg3, 0, AY - 22, "η(1)", { "text-anchor": "middle", "font-size": "15" });
+
+  var aS = document.getElementById("bya"), piS = document.getElementById("bypi");
+  var aV = document.getElementById("byaval"), piV = document.getElementById("bypival");
+  var h0El = document.getElementById("byh0"), h1El = document.getElementById("byh1");
+  var thrEl = document.getElementById("bythr"), f0El = document.getElementById("byf0"), f1El = document.getElementById("byf1");
+  var tipFlag = document.getElementById("bytip");
+
+  function render3() {
+    var a = parseFloat(aS.value), pi = parseFloat(piS.value);
+    aV.textContent = a.toFixed(1); piV.textContent = pi.toFixed(2);
+    var h1 = 4 * pi / (1 + 3 * pi), h0 = pi / (4 - 3 * pi), thr = 1 / (1 + a);
+    band0.setAttribute("width", Math.max(0, ax(thr) - AX0));
+    band1.setAttribute("x", ax(thr));
+    band1.setAttribute("width", Math.max(0, AX1 - ax(thr)));
+    thrLine.setAttribute("x1", ax(thr)); thrLine.setAttribute("x2", ax(thr));
+    thrLab.setAttribute("x", Math.min(Math.max(ax(thr), AX0 + 60), AX1 - 60));
+    var f0 = h0 >= thr - 1e-12 ? 1 : 0, f1 = h1 >= thr - 1e-12 ? 1 : 0;
+    d0.setAttribute("cx", ax(h0)); d0.setAttribute("fill", f0 ? "var(--blue)" : "var(--crimson)");
+    d1.setAttribute("cx", ax(h1)); d1.setAttribute("fill", f1 ? "var(--blue)" : "var(--crimson)");
+    d0lab.setAttribute("x", ax(h0)); d1lab.setAttribute("x", ax(h1));
+    h0El.textContent = h0.toFixed(3); h1El.textContent = h1.toFixed(3);
+    thrEl.textContent = thr.toFixed(3);
+    f0El.textContent = f0; f1El.textContent = f1;
+    tipFlag.classList.toggle("on", f0 === 1);
+  }
+  [aS, piS].forEach(function (s) { s.addEventListener("input", render3); });
+  document.getElementById("bypa").addEventListener("click", function () { aS.value = 1; piS.value = 0.4; render3(); });
+  document.getElementById("bypc").addEventListener("click", function () { aS.value = 1; piS.value = 0.8; render3(); });
+  document.getElementById("bypb").addEventListener("click", function () { aS.value = 4; piS.value = 0.4; render3(); });
+  render3();
+
+  /* ---------- Figure 4: ROC randomization ---------- */
+  var svg4 = document.getElementById("roc-svg");
+  var R0 = 200, RW = 380, RY = 20;
+  function rx(f) { return R0 + f * RW; }
+  function ry(t) { return RY + (1 - t) * RW; }
+  var A0V = [[0, 0], [0.08, 0.45], [0.2, 0.7], [0.4, 0.88], [0.7, 0.97], [1, 1]];
+  var A1V = [[0, 0], [0.15, 0.35], [0.35, 0.62], [0.6, 0.82], [1, 1]];
+  function interp(V, f) {
+    for (var i = 1; i < V.length; i++) {
+      if (f <= V[i][0]) {
+        var a = V[i - 1], b = V[i];
+        return a[1] + (b[1] - a[1]) * (f - a[0]) / (b[0] - a[0]);
+      }
+    }
+    return 1;
+  }
+  el(svg4, "rect", { x: R0, y: RY, width: RW, height: RW, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  var feas = "M" + rx(0) + "," + ry(0);
+  A1V.forEach(function (p) { feas += " L" + rx(p[0]) + "," + ry(p[1]); });
+  feas += " L" + rx(0) + "," + ry(0) + " Z";
+  el(svg4, "path", { d: feas, fill: "var(--amber-soft)" });
+  el(svg4, "line", { x1: rx(0), y1: ry(0), x2: rx(1), y2: ry(1), stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "5 4" });
+  function polyPath(V) {
+    var d = "";
+    V.forEach(function (p, i) { d += (i ? "L" : "M") + rx(p[0]) + "," + ry(p[1]); });
+    return d;
+  }
+  el(svg4, "path", { d: polyPath(A0V), fill: "none", stroke: "var(--blue)", "stroke-width": 2.6, "stroke-linejoin": "round" });
+  el(svg4, "path", { d: polyPath(A1V), fill: "none", stroke: "var(--crimson)", "stroke-width": 2.6, "stroke-linejoin": "round" });
+  [0, 0.5, 1].forEach(function (v) {
+    txt(svg4, rx(v), ry(0) + 20, v, { "class": "axis-label", "text-anchor": "middle" });
+    txt(svg4, rx(0) - 8, ry(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  txt(svg4, rx(1), ry(0) + 38, "FPR", { "class": "axis-label", "text-anchor": "end" });
+  txt(svg4, rx(0) - 26, RY - 6, "TPR", { "class": "axis-label" });
+
+  var chord = el(svg4, "line", { stroke: "var(--blue)", "stroke-width": 1.6, "stroke-dasharray": "5 4" });
+  var endL = el(svg4, "circle", { r: 6, fill: "var(--card)", stroke: "var(--blue)", "stroke-width": 2.5 });
+  var endR = el(svg4, "circle", { r: 6, fill: "var(--card)", stroke: "var(--blue)", "stroke-width": 2.5 });
+  var opDot = el(svg4, "circle", { r: 7.5, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+
+  txt(svg4, 16, 40, "the setup", { "class": "axis-label" });
+  txt(svg4, 16, 66, "A=0 — the easier group", { fill: "var(--blue)", "font-size": "14" });
+  txt(svg4, 16, 88, "A=1 — strictly below", { fill: "var(--crimson)", "font-size": "14" });
+  txt(svg4, 16, 110, "feasible common points", { fill: "var(--amber)", "font-size": "14" });
+  txt(svg4, 16, 156, "equalized odds =", { "class": "axis-label" });
+  txt(svg4, 16, 176, "same (FPR, TPR)", { "class": "axis-label" });
+  txt(svg4, 16, 196, "in both groups", { "class": "axis-label" });
+  txt(svg4, 16, 250, "A=1: sits on its curve", { fill: "var(--crimson)", "font-size": "13.5" });
+  txt(svg4, 16, 272, "A=0: must randomize", { fill: "var(--blue)", "font-size": "13.5" });
+  txt(svg4, 16, 294, "along the dashed chord", { fill: "var(--blue)", "font-size": "13.5" });
+
+  var sS = document.getElementById("rocs");
+  var fEl = document.getElementById("rocf"), tEl = document.getElementById("roct"), wEl = document.getElementById("rocw");
+  function render4() {
+    var s = parseFloat(sS.value);
+    var pf = 0.06 + s * 0.88, pt = interp(A1V, pf);
+    opDot.setAttribute("cx", rx(pf)); opDot.setAttribute("cy", ry(pt));
+    var slope = pt / pf, rf = null;
+    for (var i = 0; i <= 400; i++) {
+      var f = pf + (i / 400) * (1 - pf);
+      if (interp(A0V, f) <= slope * f) { rf = f; break; }
+    }
+    if (rf === null) rf = 1;
+    var rt = interp(A0V, rf);
+    chord.setAttribute("x1", rx(0)); chord.setAttribute("y1", ry(0));
+    chord.setAttribute("x2", rx(rf)); chord.setAttribute("y2", ry(rt));
+    endL.setAttribute("cx", rx(0)); endL.setAttribute("cy", ry(0));
+    endR.setAttribute("cx", rx(rf)); endR.setAttribute("cy", ry(rt));
+    fEl.textContent = pf.toFixed(2);
+    tEl.textContent = pt.toFixed(2);
+    wEl.textContent = (pf / rf).toFixed(2);
+  }
+  sS.addEventListener("input", render4);
+  render4();
+
+  /* ---------- Figure 5: spiky-smooth cartoon ---------- */
+  var svg5 = document.getElementById("sp-svg");
+  var S0 = 40, S1 = 730, SB = 250, SH = 150;
+  function sxx(v) { return S0 + v * (S1 - S0); }
+  el(svg5, "line", { x1: S0, y1: SB, x2: S1, y2: SB, stroke: "var(--muted)", "stroke-width": 1.2 });
+  var smoothLine = el(svg5, "line", { x1: S0, y1: SB - 40, x2: S1, y2: SB - 40, stroke: "var(--blue)", "stroke-width": 2.4 });
+  txt(svg5, S0 + 4, SB - 50, "smooth part ≈ truth", { fill: "var(--blue)", "font-size": "13.5" });
+  var gSpikes = el(svg5, "g", {});
+  var testX = 0.63;
+  el(svg5, "line", { x1: sxx(testX), y1: 40, x2: sxx(testX), y2: SB, stroke: "var(--amber)", "stroke-width": 2, "stroke-dasharray": "5 4" });
+  el(svg5, "circle", { cx: sxx(testX), cy: SB - 40, r: 6.5, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+  txt(svg5, sxx(testX) + 8, 56, "test point", { fill: "var(--amber)", "font-size": "13.5" });
+  txt(svg5, sxx(testX) + 8, 74, "→ reads the smooth part", { fill: "var(--amber)", "font-size": "12.5" });
+
+  var spdS = document.getElementById("spd"), spnS = document.getElementById("spn");
+  var spdV = document.getElementById("spdval"), spnV = document.getElementById("spnval");
+  var spB = document.getElementById("spbound"), spR = document.getElementById("spratio");
+  var spFlag = document.getElementById("spflag"), spOk = document.getElementById("spok");
+
+  function render5() {
+    var kd = parseFloat(spdS.value), n = parseInt(spnS.value, 10);
+    var d5 = Math.pow(10, kd);
+    spdV.textContent = kd.toFixed(kd % 1 ? 2 : 0).replace(/\.00$/, "");
+    spnV.textContent = n;
+    while (gSpikes.firstChild) gSpikes.removeChild(gSpikes.firstChild);
+    var seed = 77 >>> 0;
+    function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+    var wpx = Math.max(1.2, 90 / Math.sqrt(d5));
+    for (var i = 0; i < n; i++) {
+      var x = 0.03 + 0.94 * rnd();
+      if (Math.abs(x - testX) < 0.035) x += x < testX ? -0.05 : 0.05;
+      var up = rnd() > 0.45;
+      var h = (0.55 + 0.45 * rnd()) * SH * (up ? 1 : -0.25);
+      var cx = sxx(x);
+      el(gSpikes, "path", {
+        d: "M" + (cx - wpx) + "," + (SB - 40) + " L" + cx + "," + (SB - 40 - h) + " L" + (cx + wpx) + "," + (SB - 40) + " Z",
+        fill: "var(--crimson)", "fill-opacity": 0.75
+      });
+      el(gSpikes, "circle", { cx: cx, cy: SB - 40 - h, r: 2.6, fill: "var(--crimson)" });
+    }
+    var ct2 = 0.005;
+    var bound = 2 * n * Math.exp(-ct2 * d5);
+    spB.textContent = bound >= 0.01 ? bound.toFixed(2) : bound.toExponential(1).replace("-", "−");
+    spR.textContent = Math.round(d5 / Math.log(n));
+    spFlag.classList.toggle("on", bound >= 1);
+    spOk.classList.toggle("on", bound < 0.05);
+  }
+  [spdS, spnS].forEach(function (s) { s.addEventListener("input", render5); });
+  render5();
+
+  /* ---------- Figure 6: the two inequalities ---------- */
+  var svgI = document.getElementById("ind-svg");
+  var mi = { l: 46, r: 14, t: 18, b: 40 }, WI = 440, HI6 = 300;
+  var pwi = WI - mi.l - mi.r, phi = HI6 - mi.t - mi.b;
+  var ZLO = -1.5, ZHI = 2.5, YMI = 1.6;
+  function ix(z) { return mi.l + ((z - ZLO) / (ZHI - ZLO)) * pwi; }
+  function iy(v) { return mi.t + (1 - Math.min(v, YMI) / YMI) * phi; }
+  [0, 0.5, 1, 1.5].forEach(function (v) {
+    el(svgI, "line", { x1: mi.l, y1: iy(v), x2: WI - mi.r, y2: iy(v), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svgI, mi.l - 6, iy(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  el(svgI, "line", { x1: ix(0), y1: mi.t, x2: ix(0), y2: HI6 - mi.b, stroke: "var(--grid)", "stroke-width": 1 });
+  txt(svgI, ix(0), HI6 - mi.b + 16, "0", { "class": "axis-label", "text-anchor": "middle" });
+  txt(svgI, WI - mi.r, HI6 - 6, "z = y·f(x)  (margin)", { "class": "axis-label", "text-anchor": "end" });
+  var dExp = "";
+  for (var iz = 0; iz <= 160; iz++) {
+    var zz = ZLO + (iz / 160) * (ZHI - ZLO);
+    dExp += (iz ? "L" : "M") + ix(zz).toFixed(1) + "," + iy(Math.exp(-zz)).toFixed(1);
+  }
+  el(svgI, "path", { d: dExp, fill: "none", stroke: "var(--blue)", "stroke-width": 2.4 });
+  el(svgI, "line", { x1: ix(ZLO), y1: iy(1), x2: ix(0), y2: iy(1), stroke: "var(--crimson)", "stroke-width": 2.6 });
+  el(svgI, "line", { x1: ix(0), y1: iy(0), x2: ix(ZHI), y2: iy(0), stroke: "var(--crimson)", "stroke-width": 2.6 });
+  el(svgI, "line", { x1: ix(0), y1: iy(1), x2: ix(0), y2: iy(0), stroke: "var(--crimson)", "stroke-width": 1.4, "stroke-dasharray": "3 3" });
+  txt(svgI, ix(-1.35), iy(1) - 10, "𝟙{z ≤ 0}", { fill: "var(--crimson)", "font-size": "14" });
+  txt(svgI, ix(0.5), iy(Math.exp(-0.5)) - 12, "e⁻ᶻ", { fill: "var(--blue)", "font-size": "15" });
+
+  var svgF = document.getElementById("fac-svg");
+  function fx(e) { return mi.l + e * pwi; }
+  function fy(v) { return mi.t + (1 - Math.min(v, 1.1) / 1.1) * phi; }
+  [0, 0.5, 1].forEach(function (v) {
+    el(svgF, "line", { x1: mi.l, y1: fy(v), x2: WI - mi.r, y2: fy(v), stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svgF, mi.l - 6, fy(v) + 4, v, { "class": "axis-label", "text-anchor": "end" });
+  });
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
+    el(svgF, "line", { x1: fx(v), y1: mi.t, x2: fx(v), y2: HI6 - mi.b, stroke: "var(--grid)", "stroke-width": 1 });
+    txt(svgF, fx(v), HI6 - mi.b + 16, v, { "class": "axis-label", "text-anchor": "middle" });
+  });
+  txt(svgF, WI - mi.r, HI6 - 6, "round error εₜ", { "class": "axis-label", "text-anchor": "end" });
+  var dFac = "";
+  for (var ie = 0; ie <= 160; ie++) {
+    var ee = ie / 160;
+    dFac += (ie ? "L" : "M") + fx(ee).toFixed(1) + "," + fy(2 * Math.sqrt(ee * (1 - ee))).toFixed(1);
+  }
+  el(svgF, "path", { d: dFac, fill: "none", stroke: "var(--crimson)", "stroke-width": 2.4 });
+  el(svgF, "line", { x1: mi.l, y1: fy(1), x2: WI - mi.r, y2: fy(1), stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "5 4" });
+  txt(svgF, fx(0.97), fy(1) + 20, "no progress at ε = ½", { "class": "axis-label", "text-anchor": "end" });
+  txt(svgF, fx(0.06), fy(0.14), "2√(ε(1−ε))", { fill: "var(--crimson)", "font-size": "14" });
+  var gLine = el(svgF, "line", { stroke: "var(--amber)", "stroke-width": 1.6, "stroke-dasharray": "4 4", y1: mi.t, y2: HI6 - mi.b });
+  var gBnd = el(svgF, "line", { stroke: "var(--amber)", "stroke-width": 1.6, "stroke-dasharray": "8 4", x1: mi.l, x2: WI - mi.r });
+  var gDot = el(svgF, "circle", { r: 5.5, fill: "var(--amber)", stroke: "var(--card)", "stroke-width": 2 });
+
+  var gS = document.getElementById("fgam");
+  var gV = document.getElementById("fgamval"), facEl = document.getElementById("ffac"), bndEl = document.getElementById("fbnd");
+  function render6() {
+    var g = parseFloat(gS.value);
+    gV.textContent = g.toFixed(2);
+    var e6 = 0.5 - g, fac = 2 * Math.sqrt(e6 * (1 - e6)), bnd = Math.exp(-2 * g * g);
+    gLine.setAttribute("x1", fx(e6)); gLine.setAttribute("x2", fx(e6));
+    gBnd.setAttribute("y1", fy(bnd)); gBnd.setAttribute("y2", fy(bnd));
+    gDot.setAttribute("cx", fx(e6)); gDot.setAttribute("cy", fy(fac));
+    facEl.textContent = fac.toFixed(3);
+    bndEl.textContent = bnd.toFixed(3);
+  }
+  gS.addEventListener("input", render6);
+  render6();
+
+  /* ---------- Figure 7: shatter lab ---------- */
+  var svg7 = document.getElementById("vc-svg");
+  var VY = 190;
+  el(svg7, "line", { x1: 60, y1: VY, x2: 700, y2: VY, stroke: "var(--muted)", "stroke-width": 1.4 });
+  var gInt = el(svg7, "g", {});
+  var gPts = el(svg7, "g", {});
+  txt(svg7, 60, 44, "each amber bracket = one interval the classifier must spend", { "class": "axis-label" });
+
+  var vcN = 5;
+  var vcLabels = [1, -1, 1, -1, 1];
+  var runsEl = document.getElementById("vcruns"), growEl = document.getElementById("vcgrow"), allEl = document.getElementById("vcall");
+  var ok1 = document.getElementById("vcok1"), ok2 = document.getElementById("vcok2"), bad = document.getElementById("vcbad");
+  var b4 = document.getElementById("vc4"), b5 = document.getElementById("vc5"), bk = document.getElementById("vckill");
+
+  function ptX(i) {
+    var span = 640, pad = 90;
+    return 60 + pad + i * ((span - 2 * pad) / (vcN - 1));
+  }
+  function render7() {
+    while (gPts.firstChild) gPts.removeChild(gPts.firstChild);
+    while (gInt.firstChild) gInt.removeChild(gInt.firstChild);
+    var runs = [];
+    var cur = null;
+    for (var i = 0; i < vcN; i++) {
+      if (vcLabels[i] > 0) { if (cur === null) cur = [i, i]; else cur[1] = i; }
+      else if (cur !== null) { runs.push(cur); cur = null; }
+    }
+    if (cur !== null) runs.push(cur);
+    runs.forEach(function (r) {
+      var x0 = ptX(r[0]) - 40, x1 = ptX(r[1]) + 40;
+      el(gInt, "rect", { x: x0, y: VY - 46, width: x1 - x0, height: 92, rx: 22, fill: "var(--amber-soft)", stroke: "var(--amber)", "stroke-width": 2 });
+    });
+    for (i = 0; i < vcN; i++) {
+      (function (idx) {
+        var x = ptX(idx), pos = vcLabels[idx] > 0;
+        var c = el(gPts, "circle", {
+          cx: x, cy: VY, r: 24,
+          fill: pos ? "var(--blue-soft)" : "var(--crimson-soft)",
+          stroke: pos ? "var(--blue)" : "var(--crimson)", "stroke-width": 2.5,
+          style: "cursor: pointer;", tabindex: 0, role: "button",
+          "aria-label": "point " + (idx + 1) + ", currently " + (pos ? "positive" : "negative") + ", activate to flip"
+        });
+        var t = txt(gPts, x, VY + 8, pos ? "+" : "−", {
+          "text-anchor": "middle", fill: pos ? "var(--blue)" : "var(--crimson)",
+          style: "font-style: normal; font-size: 24px; pointer-events: none;"
+        });
+        txt(gPts, x, VY + 58, "x" + "₁₂₃₄₅"[idx], { "text-anchor": "middle", "font-size": "14", fill: "var(--ink-2)" });
+        function flip() { vcLabels[idx] = -vcLabels[idx]; render7(); }
+        c.addEventListener("click", flip);
+        c.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter" || ev.key === " ") { flip(); ev.preventDefault(); }
+        });
+      })(i);
+    }
+    var k = runs.length;
+    runsEl.textContent = k;
+    growEl.textContent = 1 + vcN + vcN * (vcN - 1) / 2;
+    allEl.textContent = Math.pow(2, vcN);
+    ok1.classList.toggle("on", k <= 1);
+    ok2.classList.toggle("on", k === 2);
+    bad.classList.toggle("on", k >= 3);
+  }
+  function setN(n) {
+    vcN = n;
+    while (vcLabels.length < n) vcLabels.push(1);
+    vcLabels.length = n;
+    b4.classList.toggle("active", n === 4);
+    b5.classList.toggle("active", n === 5);
+    render7();
+  }
+  b4.addEventListener("click", function () { setN(4); });
+  b5.addEventListener("click", function () { setN(5); });
+  bk.addEventListener("click", function () {
+    setN(5);
+    vcLabels = [1, -1, 1, -1, 1];
+    render7();
+  });
+  render7();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · the sheets behind the questions: <a href="matrices.html">matrix basics</a> · <a href="residual.html">the residual</a> · <a href="coefficients.html">reading coefficients</a> · <a href="adaboost.html">AdaBoost by hand</a> · <a href="margins.html">boosting past zero</a> · <a href="gradboost.html">gradient boosting</a></footer>
+</body>
+</html>
