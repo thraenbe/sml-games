@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧮</text></svg>">
+<title>Matrix Basics — Multiply, Transpose, Invert: the Machine View</title>
+<style>
+  :root {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #131B22;
+      --surface-2: #0E151B;
+      --ink: #E8EDF1;
+      --ink-2: #AEBAC4;
+      --muted: #7E8B96;
+      --line: #2B3843;
+      --blue: #4A7BD0;
+      --blue-soft: rgba(74, 123, 208, 0.16);
+      --crimson: #D05578;
+      --crimson-soft: rgba(208, 85, 120, 0.16);
+      --amber: #BE8A2F;
+      --amber-soft: rgba(190, 138, 47, 0.16);
+      --grid: #223039;
+      --card: #18222B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #131B22;
+    --surface-2: #0E151B;
+    --ink: #E8EDF1;
+    --ink-2: #AEBAC4;
+    --muted: #7E8B96;
+    --line: #2B3843;
+    --blue: #4A7BD0;
+    --blue-soft: rgba(74, 123, 208, 0.16);
+    --crimson: #D05578;
+    --crimson-soft: rgba(208, 85, 120, 0.16);
+    --amber: #BE8A2F;
+    --amber-soft: rgba(190, 138, 47, 0.16);
+    --grid: #223039;
+    --card: #18222B;
+  }
+  :root[data-theme="light"] {
+    --surface: #F5F7F6;
+    --surface-2: #ECF0EF;
+    --ink: #1A2530;
+    --ink-2: #4C5A66;
+    --muted: #7A8792;
+    --line: #D5DCDA;
+    --blue: #2E5EB8;
+    --blue-soft: rgba(46, 94, 184, 0.10);
+    --crimson: #C13458;
+    --crimson-soft: rgba(193, 52, 88, 0.10);
+    --amber: #A87410;
+    --amber-soft: rgba(168, 116, 16, 0.12);
+    --grid: #DEE4E2;
+    --card: #FFFFFF;
+  }
+
+  html { background: var(--surface); }
+  body {
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: var(--surface);
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+  }
+  .prose { max-width: 41rem; margin: 0 auto; }
+  .wide  { max-width: 56rem; margin: 2.2rem auto; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.prose { padding-top: 4.5rem; }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0.5rem 0 0.9rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lede { font-size: 1.12rem; color: var(--ink-2); margin: 0; text-wrap: pretty; }
+
+  h2 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 3.2rem 0 0.8rem;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  h2 .partref {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+  a { color: var(--blue); }
+
+  var, .mi {
+    font-style: italic;
+    font-family: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+    font-weight: 450;
+  }
+  sup, sub { font-size: 0.68em; line-height: 0; }
+
+  .eq {
+    font-size: 1.08rem;
+    text-align: center;
+    padding: 0.9rem 1rem;
+    margin: 1.2rem 0 1.35rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .eq.boxed {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .b { color: var(--blue); }
+  .c { color: var(--crimson); }
+  .a { color: var(--amber); }
+
+  .mx {
+    display: inline-grid;
+    gap: 0.02em 0.55em;
+    padding: 0.16em 0.5em;
+    border-left: 1.6px solid var(--ink);
+    border-right: 1.6px solid var(--ink);
+    border-radius: 0.45em;
+    vertical-align: middle;
+    line-height: 1.3;
+    font-size: 0.95em;
+  }
+  .mx span { text-align: center; font-variant-numeric: tabular-nums; }
+  .eq .mx { margin: 0 0.18em; }
+
+  .chips { display: flex; gap: 1.4rem; flex-wrap: wrap; margin: 1.6rem 0 0; }
+  .chip {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-size: 0.95rem; color: var(--ink-2);
+  }
+  .chip .dot { width: 0.72em; height: 0.72em; border-radius: 2px; flex: none; align-self: center; }
+  .dot.b { background: var(--blue); }
+  .dot.c { background: var(--crimson); }
+  .dot.a { background: var(--amber); }
+
+  figure { margin: 0; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .fig-title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  .fig-title .tn { text-transform: none; }
+  .panel > svg { display: block; width: 100%; height: auto; }
+  .axis-label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .svg-math { font-family: Charter, Cambria, Georgia, serif; font-style: italic; font-size: 15px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+  .controls label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+  }
+  input[type="range"] { flex: 1 1 6rem; min-width: 5.5rem; accent-color: var(--crimson); }
+  input[type="range"]:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+  button.preset {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    cursor: pointer;
+  }
+  button.preset:hover, button.preset:focus-visible { border-color: var(--blue); color: var(--blue); }
+
+  .readouts {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    margin-top: 0.9rem;
+  }
+  .readouts b { font-weight: 400; color: var(--ink); }
+  .flag { color: var(--crimson); opacity: 0; transition: opacity 0.25s; }
+  .flag.amber { color: var(--amber); }
+  .flag.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+
+  figcaption {
+    max-width: 41rem; margin: 0.8rem auto 0;
+    font-size: 0.9rem; color: var(--muted); text-wrap: pretty;
+  }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.4rem 0; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    font-size: 0.97rem;
+  }
+  .card .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.5rem;
+  }
+  .card p:last-child { margin-bottom: 0; }
+  .card .eq { padding: 0.4rem 0; margin: 0.5rem 0 0.6rem; font-size: 1rem; }
+
+  .takeaway {
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 1.1rem 1.3rem;
+    margin: 2.4rem 0 0;
+  }
+  .takeaway p { margin: 0; }
+
+  .backlink {
+    max-width: 41rem;
+    margin: 1.6rem auto -3rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+  .backlink a { color: var(--muted); text-decoration: none; }
+  .backlink a:hover, .backlink a:focus-visible { color: var(--blue); }
+  footer.site {
+    max-width: 41rem;
+    margin: 3.5rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  footer.site a { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav class="backlink"><a href="./">← SML Study Games</a></nav>
+
+<header class="prose">
+  <p class="eyebrow">Statistical Machine Learning · Foundations · The Matrix Toolkit</p>
+  <h1>A matrix is not a table of numbers.</h1>
+  <p class="lede">
+    It is a machine that moves vectors — and every headline formula in this course is a short
+    chain of the same few machines: <var>Xw</var>, <var>X</var><sup>T</sup><var>X</var>,
+    (<var>X</var><sup>T</sup><var>X</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>y</var>,
+    <var>X</var>(<var>X</var><sup>T</sup><var>X</var>)<sup>−1</sup><var>X</var><sup>T</sup>,
+    <var>K</var><sup>−1</sup><var>y</var>. This page builds the moves one at a time, each with a
+    worked 2×2 example, and ends where the sheets begin.
+  </p>
+  <div class="chips">
+    <span class="chip"><span class="dot b"></span>columns — where the machine sends the basis</span>
+    <span class="chip"><span class="dot c"></span>rows — one dot product per data point</span>
+    <span class="chip"><span class="dot a"></span>det &amp; eigenvalues — the machine's dials</span>
+  </div>
+</header>
+
+<section class="prose">
+  <h2><span class="partref">The setup</span>Data becomes a matrix</h2>
+  <p>
+    An <var>n</var> × <var>d</var> matrix has <var>n</var> rows and <var>d</var> columns; entry
+    <var>A<sub>ij</sub></var> sits in row <var>i</var>, column <var>j</var>. In this course one
+    convention does almost all the work: the <strong>design matrix</strong>
+    <var>X</var> ∈ ℝ<sup><var>n</var>×<var>d</var></sup> stacks the <var>n</var> data points as
+    rows, one column per feature. Three houses described by two features (area, age):
+  </p>
+  <p class="eq">
+    <var>X</var> &#61;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>90</span><span>12</span><span>120</span><span>3</span><span>60</span><span>41</span></span>
+    &nbsp; — row <var>i</var> is house <var>i</var>, column <var>j</var> is feature <var>j</var>
+  </p>
+  <p>
+    Adding matrices and scaling them works entry by entry, and only same-shaped matrices can be
+    added:
+  </p>
+  <p class="eq">
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>1</span><span>2</span><span>0</span><span>1</span></span>
+    +
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>3</span><span>0</span><span>1</span><span>2</span></span>
+    &#61;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>4</span><span>2</span><span>1</span><span>3</span></span>
+    &nbsp;·&nbsp; 2 ·
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>1</span><span>2</span><span>0</span><span>1</span></span>
+    &#61;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>2</span><span>4</span><span>0</span><span>2</span></span>
+  </p>
+  <p>
+    That part really is bookkeeping. The first real move is multiplication — and it is worth
+    learning twice.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Move 0 · the dot product</span>Three vector facts the proofs live on</h2>
+  <p>
+    Before matrices: for vectors <var>u</var>, <var>v</var> ∈ ℝ<sup><var>d</var></sup>, the inner
+    product is ⟨<var>u</var>, <var>v</var>⟩ &#61; Σ<sub><var>j</var></sub> <var>u<sub>j</sub></var><var>v<sub>j</sub></var>
+    and the squared length is ‖<var>u</var>‖² &#61; ⟨<var>u</var>, <var>u</var>⟩. With
+    <var>u</var> &#61; (1, 2) and <var>v</var> &#61; (3, −1): ⟨<var>u</var>, <var>v</var>⟩ &#61; 3 − 2 &#61; 1
+    and ‖<var>u</var>‖² &#61; 5. Three identities about them power whole exercise sheets:
+  </p>
+  <p class="eq boxed">‖<var>u</var> + <var>v</var>‖² &#61; ‖<var>u</var>‖² + 2⟨<var>u</var>, <var>v</var>⟩ + ‖<var>v</var>‖²</p>
+  <p>
+    (check: ‖(4, 1)‖² &#61; 17 &#61; 5 + 2·1 + 10 ✓) — this expansion is the single computational
+    step of the perceptron convergence proof (Sheet 4) and the SGD stability proof (Sheet 5).
+    Next to it sit <strong>Cauchy–Schwarz</strong>, |⟨<var>u</var>, <var>v</var>⟩| ≤ ‖<var>u</var>‖ ‖<var>v</var>‖
+    (here |1| ≤ √5 · √10 ≈ 7.07 ✓), which closes the perceptron mistake bound, and the
+    <strong>triangle inequality</strong> ‖<var>u</var> + <var>v</var>‖ ≤ ‖<var>u</var>‖ + ‖<var>v</var>‖.
+    When ⟨<var>u</var>, <var>v</var>⟩ &#61; 0 the vectors are <em>orthogonal</em> and the expansion
+    becomes Pythagoras — the geometry behind least squares.
+  </p>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Move 1 · multiply</span>Multiplication: rows dot, columns mix</h2>
+  <p>
+    The product of <var>A</var> (shape <var>m</var> × <var>k</var>) and <var>B</var> (shape
+    <var>k</var> × <var>p</var>) exists only when the inner sizes match, and the result is
+    <var>m</var> × <var>p</var>: entry (<var>AB</var>)<sub><var>ij</var></sub> is the dot product
+    of <span class="c">row <var>i</var> of <var>A</var></span> with
+    <span class="b">column <var>j</var> of <var>B</var></span>. For a matrix times a vector there
+    are two equally true readings — and switching between them is half of this course:
+  </p>
+  <p class="eq">
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>2</span><span>1</span><span>1</span><span>3</span></span>
+    <span class="mx"><span>1</span><span>2</span></span>
+    &#61;
+    <span class="mx"><span>2·1 + 1·2</span><span>1·1 + 3·2</span></span>
+    &#61;
+    <span class="mx"><span>4</span><span>7</span></span>
+    &nbsp;&nbsp;or&nbsp;&nbsp;
+    1&#8202;<span class="mx"><span>2</span><span>1</span></span> + 2&#8202;<span class="mx"><span>1</span><span>3</span></span>
+  </p>
+  <p>
+    <span class="c">Rows dot</span>: each output entry is one dot product — so
+    (<var>Xw</var>)<sub><var>i</var></sub> &#61; ⟨<var>X<sub>i</sub></var>, <var>w</var>⟩ is data
+    point <var>i</var>'s prediction. <span class="b">Columns mix</span>: <var>Xw</var> is a linear
+    combination of the columns of <var>X</var>, with weights <var>w</var> — so the set of all
+    possible predictions is the <em>column space</em> of <var>X</var>. Step through a full product
+    below.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 1 · matrix multiplication, one entry at a time — click a result cell or step</p>
+    <svg id="mul-svg" viewBox="0 0 760 356" role="img" aria-label="A 2 by 3 matrix A times a 3 by 2 matrix B, with the active row of A, column of B, and result cell highlighted, and the dot-product arithmetic written out below"></svg>
+    <div class="controls">
+      <button class="preset" id="mprev">← previous entry</button>
+      <button class="preset" id="mnext">next entry →</button>
+      <span style="font-family: ui-monospace, Menlo, monospace; font-size: 0.78rem; color: var(--ink-2);">(2×3)·(3×2) → 2×2 — inner sizes must match</span>
+    </div>
+  </div>
+  <figcaption>
+    Every entry of <var>C</var> &#61; <var>AB</var> is one dot product: row <var>i</var> of
+    <var>A</var> (crimson) against column <var>j</var> of <var>B</var> (blue). Note the order
+    matters: <var>BA</var> would be 3×3 — a different machine entirely. Even for square matrices,
+    <var>AB</var> ≠ <var>BA</var> in general.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">The picture</span>A 2×2 matrix moves the whole plane</h2>
+  <p>
+    Feed <em>every</em> vector through <var>A</var> and you see what the matrix <em>is</em>. The
+    columns tell you everything: <var>Ae</var>₁ is the first column, <var>Ae</var>₂ the second, and
+    linearity fills in the rest — the square grid becomes a parallelogram grid. The
+    <span class="a">determinant</span> det <var>A</var> &#61; <var>ad</var> − <var>bc</var> is the
+    <em>area factor</em>: the unit square lands on a parallelogram of area |det <var>A</var>|. If
+    det <var>A</var> ≠ 0 the machine can be run backwards:
+  </p>
+  <p class="eq boxed">
+    <var>A</var><sup>−1</sup> &#61; (1 / det <var>A</var>)
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span><var>d</var></span><span>−<var>b</var></span><span>−<var>c</var></span><span><var>a</var></span></span>
+    &nbsp; e.g. &nbsp;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>2</span><span>1</span><span>1</span><span>1</span></span><sup>−1</sup>
+    &#61;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>1</span><span>−1</span><span>−1</span><span>2</span></span>
+  </p>
+  <p>
+    (det &#61; 2·1 − 1·1 &#61; 1; multiply them to check you get <var>I</var>, the identity — the
+    machine that moves nothing.) If det <var>A</var> &#61; 0 the plane is crushed onto a line:
+    two different inputs land on the same output, so no inverse can exist. Play:
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 2 · the machine view — set the four entries of <span class="tn"><var>A</var></span>, watch the plane move</p>
+    <svg id="mach-svg" viewBox="0 0 760 430" role="img" aria-label="A 2 by 2 matrix transforming the plane: the transformed grid, the images of the two basis vectors as arrows, and the unit square mapped to a parallelogram, with determinant and inverse shown on the left"></svg>
+    <div class="controls">
+      <label for="ma">a = <span id="maval">1.0</span></label>
+      <input type="range" id="ma" min="-2" max="2" step="0.1" value="1" aria-label="entry a, row 1 column 1">
+      <label for="mb">b = <span id="mbval">0.6</span></label>
+      <input type="range" id="mb" min="-2" max="2" step="0.1" value="0.6" aria-label="entry b, row 1 column 2">
+      <label for="mc">c = <span id="mcval">0.0</span></label>
+      <input type="range" id="mc" min="-2" max="2" step="0.1" value="0" aria-label="entry c, row 2 column 1">
+      <label for="md">d = <span id="mdval">1.0</span></label>
+      <input type="range" id="md" min="-2" max="2" step="0.1" value="1" aria-label="entry d, row 2 column 2">
+    </div>
+    <div class="controls" style="border-top: none; padding-top: 0;">
+      <button class="preset" id="pid">identity</button>
+      <button class="preset" id="pstretch">stretch ×2, ×½</button>
+      <button class="preset" id="prot">rotate ≈45°</button>
+      <button class="preset" id="pshear">shear</button>
+      <button class="preset" id="pflip">reflect (det &lt; 0)</button>
+      <button class="preset" id="pcollapse">collapse (det = 0)</button>
+    </div>
+    <div class="readouts">
+      <span>det A = ad − bc = <b id="detval">–</b></span>
+      <span>area of image square = |det| = <b id="areaval">–</b></span>
+      <span class="flag amber" id="flipflag">det &lt; 0 — the square lands flipped over</span>
+      <span class="flag" id="singflag">det ≈ 0 — plane crushed to a line: no inverse</span>
+    </div>
+  </div>
+  <figcaption>
+    The dashed square is the input; the amber parallelogram is where <var>A</var> sends it. Its
+    sides are the columns of <var>A</var> — the blue arrow is <var>Ae</var>₁ &#61; column 1, the
+    crimson arrow <var>Ae</var>₂ &#61; column 2. Try <em>collapse</em>: the columns line up, the
+    grid folds flat, and <var>A</var><sup>−1</sup> on the left disappears. That is exactly what
+    “<var>X</var><sup>T</sup><var>X</var> not invertible” means on the sheets.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">Move 2 · transpose</span>Transpose: the bookkeeping move with one big rule</h2>
+  <p>
+    <var>A</var><sup>T</sup> flips rows and columns: (<var>A</var><sup>T</sup>)<sub><var>ij</var></sub> &#61; <var>A<sub>ji</sub></var>.
+    An <var>n</var> × <var>d</var> matrix becomes <var>d</var> × <var>n</var>. Writing vectors as
+    one-column matrices makes the dot product a matrix product,
+    ⟨<var>u</var>, <var>v</var>⟩ &#61; <var>u</var><sup>T</sup><var>v</var> — which is why
+    transposes are everywhere in the sheets: they are dot products in disguise. The one rule worth
+    memorizing is that transposing a product <em>reverses the order</em>:
+  </p>
+  <p class="eq boxed">(<var>AB</var>)<sup>T</sup> &#61; <var>B</var><sup>T</sup><var>A</var><sup>T</sup> &nbsp;&nbsp;·&nbsp;&nbsp; (<var>AB</var>)<sup>−1</sup> &#61; <var>B</var><sup>−1</sup><var>A</var><sup>−1</sup></p>
+  <p class="eq">
+    <var>AB</var> &#61;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>1</span><span>2</span><span>0</span><span>1</span></span>
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>3</span><span>0</span><span>1</span><span>2</span></span>
+    &#61;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>5</span><span>4</span><span>1</span><span>2</span></span>
+    ,&nbsp; (<var>AB</var>)<sup>T</sup> &#61;
+    <span class="mx" style="grid-template-columns: repeat(2, auto);"><span>5</span><span>1</span><span>4</span><span>2</span></span>
+    &#61; <var>B</var><sup>T</sup><var>A</var><sup>T</sup> ✓
+  </p>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">Symmetric matrices</p>
+      <p>
+        <var>A</var> is <em>symmetric</em> when <var>A</var><sup>T</sup> &#61; <var>A</var>. The
+        reversal rule shows why the course's favourite matrix is always symmetric:
+        (<var>X</var><sup>T</sup><var>X</var>)<sup>T</sup> &#61; <var>X</var><sup>T</sup>(<var>X</var><sup>T</sup>)<sup>T</sup> &#61; <var>X</var><sup>T</sup><var>X</var>.
+        Same for <var>XX</var><sup>T</sup>, for covariance matrices, and for kernel matrices — and
+        the inverse of a symmetric matrix is symmetric too.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">Moving a matrix across a dot product</p>
+      <p>
+        ⟨<var>r</var>, <var>Xv</var>⟩ &#61; <var>r</var><sup>T</sup><var>Xv</var> &#61; (<var>X</var><sup>T</sup><var>r</var>)<sup>T</sup><var>v</var> &#61; ⟨<var>X</var><sup>T</sup><var>r</var>, <var>v</var>⟩.
+        The transpose hops to the other side. This one line turns “the residual is orthogonal to
+        every prediction” into the normal equations
+        <var>X</var><sup>T</sup><var>r</var> &#61; 0 — the derivation at the heart of
+        <a href="residual.html">Sheet 6</a>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Move 3 · invert, safely</span>Quadratic forms: why <var>X</var><sup>T</sup><var>X</var> is special</h2>
+  <p>
+    A symmetric matrix <var>A</var> defines a <em>quadratic form</em>
+    <var>v</var><sup>T</sup><var>Av</var> — a bowl, a saddle, or a flat-bottomed valley, depending
+    on <var>A</var>. Call <var>A</var> <strong>positive definite</strong> if
+    <var>v</var><sup>T</sup><var>Av</var> &gt; 0 for every <var>v</var> ≠ 0 (a true bowl: one
+    lowest point), and positive <em>semi</em>-definite if ≥ 0 is all you can say. The course's key
+    example is a one-line proof:
+  </p>
+  <p class="eq boxed"><var>v</var><sup>T</sup><span class="b"><var>X</var><sup>T</sup><var>X</var></span><var>v</var> &#61; (<var>Xv</var>)<sup>T</sup>(<var>Xv</var>) &#61; ‖<var>Xv</var>‖² ≥ 0</p>
+  <p>
+    So <var>X</var><sup>T</sup><var>X</var> is <em>always</em> at least semi-definite, and the only
+    way to hit zero is <var>Xv</var> &#61; 0. If the columns of <var>X</var> are linearly
+    independent (rank <var>d</var>), that forces <var>v</var> &#61; 0 — the form is positive
+    definite, and a positive definite matrix is invertible. That is the exact sense in which least
+    squares “works when the features aren't redundant”. The dials of a symmetric machine are its
+    <span class="a">eigenvalues</span>: directions <var>v</var> where <var>Av</var> &#61; λ<var>v</var>,
+    pure stretches with no turning. Positive definite ⟺ all λ &gt; 0; a zero eigenvalue is a flat
+    valley direction; a negative one bends the bowl into a saddle. And regularization is now one
+    sentence: <strong><var>X</var><sup>T</sup><var>X</var> + λ<var>I</var> adds λ to every
+    eigenvalue</strong>, lifting flat valleys into bowls — that is why the
+    <a href="regimes.html">ridge</a> solution exists no matter how degenerate <var>X</var> is.
+  </p>
+</section>
+
+<figure class="wide">
+  <div class="panel">
+    <p class="fig-title">Figure 3 · the quadratic form <span class="tn"><var>x</var><sup>T</sup><var>Mx</var></span>, <span class="tn"><var>M</var> &#61; <var>A</var> + λ<var>I</var></span> — bowl, saddle, or flat valley?</p>
+    <svg id="qf-svg" viewBox="0 0 760 430" role="img" aria-label="A symmetric 2 by 2 matrix's quadratic form shown as a sign map over the plane with level curves and eigenvector axes, plus eigenvalue readouts on the left; sliders set the matrix entries and a ridge term lambda"></svg>
+    <div class="controls">
+      <label for="qa">a = <span id="qaval">2.0</span></label>
+      <input type="range" id="qa" min="-2" max="3" step="0.1" value="2" aria-label="diagonal entry a">
+      <label for="qb">b = <span id="qbval">1.0</span></label>
+      <input type="range" id="qb" min="-2" max="2" step="0.1" value="1" aria-label="off-diagonal entry b">
+      <label for="qc">c = <span id="qcval">2.0</span></label>
+      <input type="range" id="qc" min="-2" max="3" step="0.1" value="2" aria-label="diagonal entry c">
+      <label for="qlam">ridge λ = <span id="qlamval">0.00</span></label>
+      <input type="range" id="qlam" min="0" max="2" step="0.05" value="0" aria-label="ridge strength lambda">
+    </div>
+    <div class="controls" style="border-top: none; padding-top: 0;">
+      <button class="preset" id="qpd">X<sup>T</sup>X-like (bowl)</button>
+      <button class="preset" id="qsing">collinear twins (flat valley)</button>
+      <button class="preset" id="qsad">saddle</button>
+    </div>
+    <div class="readouts">
+      <span>λ₁ = <b id="l1val">–</b></span>
+      <span>λ₂ = <b id="l2val">–</b></span>
+      <span class="flag amber" id="pdflag">positive definite — unique minimum, inverse exists</span>
+      <span class="flag amber" id="psdflag">λ₂ ≈ 0 — a flat valley: infinitely many minimizers</span>
+      <span class="flag" id="indflag">indefinite — a saddle: x<sup>T</sup>Mx goes both ways</span>
+    </div>
+  </div>
+  <figcaption>
+    Blue where <var>x</var><sup>T</sup><var>Mx</var> &gt; 0, crimson where it is negative; the
+    curves are the level sets <var>x</var><sup>T</sup><var>Mx</var> &#61; ±1 and the amber axes are
+    the eigenvector directions (solid: λ₁, dashed: λ₂). Try <em>collinear twins</em> — the matrix
+    (1 1; 1 1) is <var>X</var><sup>T</sup><var>X</var> for two identical features, with a flat
+    direction along their difference — then pull the ridge dial and watch λ₂ lift off zero and the
+    valley close into a bowl.
+  </figcaption>
+</figure>
+
+<section class="prose">
+  <h2><span class="partref">The payoff</span>The formulas the course runs on</h2>
+  <p>
+    Every one of these is now readable as a chain of the moves above — multiply, transpose, invert
+    a positive definite matrix:
+  </p>
+  <div class="duo">
+    <div class="card">
+      <p class="tag">Normal equations · Sheet 6</p>
+      <p class="eq"><var>X</var><sup>T</sup><var>Xw</var> &#61; <var>X</var><sup>T</sup><var>y</var></p>
+      <p>
+        “The residual <var>y</var> − <var>Xw</var> is orthogonal to every column of
+        <var>X</var>” — least squares without calculus. The whole story is
+        <a href="residual.html">the residual explainer</a>.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">OLS &amp; weighted · Sheets 6–7</p>
+      <p class="eq">ŵ &#61; (<var>X</var><sup>T</sup><var>X</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>y</var></p>
+      <p>
+        Exists because rank-<var>d</var> features make <var>X</var><sup>T</sup><var>X</var>
+        positive definite. Weighting points swaps in
+        (<var>X</var><sup>T</sup><var>RX</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>Ry</var> —
+        see <a href="coefficients.html">reading coefficients</a>.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">Ridge · Sheet 6</p>
+      <p class="eq">ŵ<sub>λ</sub> &#61; (<var>X</var><sup>T</sup><var>X</var> + λ<var>I</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>y</var></p>
+      <p>
+        Stack √λ&#8202;<var>I</var> under <var>X</var> as extra “phantom rows” and this is just OLS
+        on the taller matrix — and since + λ<var>I</var> lifts every eigenvalue, it exists for
+        <em>any</em> <var>X</var>. The λ dial lives in <a href="regimes.html">regimes &amp; ridge</a>.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">Minimum norm · Sheets 6 &amp; 10</p>
+      <p class="eq">ŵ<sub>mn</sub> &#61; <var>X</var><sup>T</sup>(<var>XX</var><sup>T</sup>)<sup>−1</sup><var>y</var></p>
+      <p>
+        The mirror world <var>d</var> &gt; <var>n</var>: many perfect fits, and this one is the
+        shortest. Note the pattern — when <var>X</var><sup>T</sup><var>X</var> (d×d) fails,
+        <var>XX</var><sup>T</sup> (n×n) steps in. It returns as the interpolator of double descent
+        in Sheet 10.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">Projection · Sheet 8</p>
+      <p class="eq"><var>P</var> &#61; <var>X</var>(<var>X</var><sup>T</sup><var>X</var>)<sup>−1</sup><var>X</var><sup>T</sup></p>
+      <p>
+        <var>Py</var> is the fitted vector — <var>y</var>'s shadow on the column space. Two
+        signature properties: <var>P</var><sup>T</sup> &#61; <var>P</var> and
+        <var>P</var>² &#61; <var>P</var> (projecting twice changes nothing). These two lines are why
+        <a href="gradboost.html">boosting linear models stalls after one round</a>.
+      </p>
+    </div>
+    <div class="card">
+      <p class="tag">Gram &amp; kernel matrices · Sheets 9–10</p>
+      <p class="eq"><var>K<sub>ij</sub></var> &#61; ⟨φ(<var>x<sub>i</sub></var>), φ(<var>x<sub>j</sub></var>)⟩, &nbsp; <var>f</var>(<var>x</var>) &#61; <var>k</var>(<var>x</var>)<sup>T</sup><var>K</var><sup>−1</sup><var>y</var></p>
+      <p>
+        An <var>n</var> × <var>n</var> matrix of pairwise dot products — symmetric and positive
+        semi-definite by the same one-line proof. The late sheets live on its eigenvalues: smallest
+        eigenvalue ⟹ invertibility, ‖<var>K</var><sup>−1</sup>‖ &#61; 1/λ<sub>min</sub>, and the
+        covariance spectrum λ₁ ≥ λ₂ ≥ … decides whether interpolation is benign.
+      </p>
+    </div>
+  </div>
+  <div class="takeaway">
+    <p>
+      <strong>The bigger picture.</strong> The sheets never ask for linear algebra for its own
+      sake — they ask you to read chains like
+      (<var>X</var><sup>T</sup><var>X</var> + λ<var>I</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>y</var>
+      fluently. Fluency is three habits. <em>Check shapes first</em>: every product must chain
+      (n×d)(d×1) → (n×1); half of all confusion is a shape error. <em>Read multiplication both
+      ways</em>: rows when you think about data points, columns when you think about what the model
+      can express. <em>Trust the bowl</em>: anything of the form
+      <var>X</var><sup>T</sup><var>X</var> or <var>K</var> is symmetric and at least
+      semi-definite, so it can be inverted the moment nothing is redundant — and a ridge λ buys
+      that moment for any matrix whatsoever.
+    </p>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(parent, tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, attrs) {
+    attrs = attrs || {};
+    attrs.x = x; attrs.y = y;
+    if (!attrs["class"]) attrs["class"] = "svg-math";
+    var t = el(parent, "text", attrs);
+    t.textContent = s;
+    return t;
+  }
+  function fmt(v, dec) {
+    var s = v.toFixed(dec === undefined ? 2 : dec);
+    if (s === "-0.0" || s === "-0.00" || s === "-0") s = s.slice(1);
+    return s.replace("-", "−");
+  }
+
+  /* ---------- Figure 1: multiplication stepper ---------- */
+  var svgM = document.getElementById("mul-svg");
+  var MA = [[2, 0, 1], [1, 3, 0]];
+  var MB = [[1, 2], [0, 1], [4, 0]];
+  var MC = [[0, 0], [0, 0]];
+  var i, j, k;
+  for (i = 0; i < 2; i++) for (j = 0; j < 2; j++) {
+    var s = 0;
+    for (k = 0; k < 3; k++) s += MA[i][k] * MB[k][j];
+    MC[i][j] = s;
+  }
+  var CS = 46;
+  var Bx = 350, By = 26, Ax = 190, Ay = By + 3 * CS + 18, Cx = Bx, Cy = Ay;
+  var SUBD = ["₁", "₂", "₃"];
+
+  function bracket(x0, y0, w, h) {
+    el(svgM, "path", { d: "M" + (x0 + 8) + "," + y0 + " L" + x0 + "," + y0 + " L" + x0 + "," + (y0 + h) + " L" + (x0 + 8) + "," + (y0 + h), fill: "none", stroke: "var(--ink)", "stroke-width": 1.6 });
+    el(svgM, "path", { d: "M" + (x0 + w - 8) + "," + y0 + " L" + (x0 + w) + "," + y0 + " L" + (x0 + w) + "," + (y0 + h) + " L" + (x0 + w - 8) + "," + (y0 + h), fill: "none", stroke: "var(--ink)", "stroke-width": 1.6 });
+  }
+
+  var rowHi = el(svgM, "rect", { x: Ax, y: Ay, width: 3 * CS, height: CS, fill: "var(--crimson-soft)", rx: 4 });
+  var colHi = el(svgM, "rect", { x: Bx, y: By, width: CS, height: 3 * CS, fill: "var(--blue-soft)", rx: 4 });
+  var cHi = el(svgM, "rect", { x: Cx, y: Cy, width: CS, height: CS, fill: "var(--amber-soft)", stroke: "var(--amber)", "stroke-width": 1.5, rx: 4 });
+
+  function drawMat(x0, y0, M, pad) {
+    var rows = M.length, cols = M[0].length;
+    bracket(x0 - pad, y0 - 6, cols * CS + 2 * pad, rows * CS + 12);
+    for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
+      txt(svgM, x0 + c * CS + CS / 2, y0 + r * CS + CS / 2 + 5, M[r][c], { "text-anchor": "middle", fill: "var(--ink)", style: "font-style: normal; font-size: 17px; font-variant-numeric: tabular-nums;" });
+    }
+  }
+  drawMat(Ax, Ay, MA, 8);
+  drawMat(Bx, By, MB, 8);
+  drawMat(Cx, Cy, MC, 8);
+  txt(svgM, Ax - 42, Ay + CS + 5, "A", { "font-size": "17", fill: "var(--ink)" });
+  txt(svgM, Ax - 42, Ay + CS + 24, "2×3", { "class": "axis-label" });
+  txt(svgM, Bx + 2 * CS + 26, By + 1.5 * CS + 5, "B", { "font-size": "17", fill: "var(--ink)" });
+  txt(svgM, Bx + 2 * CS + 26, By + 1.5 * CS + 24, "3×2", { "class": "axis-label" });
+  txt(svgM, Cx + 2 * CS + 26, Cy + CS + 5, "C = AB", { "font-size": "17", fill: "var(--ink)" });
+  txt(svgM, Cx + 2 * CS + 26, Cy + CS + 24, "2×2", { "class": "axis-label" });
+
+  var arith = txt(svgM, 380, 340, "", { "text-anchor": "middle", fill: "var(--ink)", style: "font-style: normal; font-size: 17px; font-variant-numeric: tabular-nums;" });
+
+  var step = 0;
+  var STEPS = [[0, 0], [0, 1], [1, 0], [1, 1]];
+  function renderMul() {
+    var ij = STEPS[step], si = ij[0], sj = ij[1];
+    rowHi.setAttribute("y", Ay + si * CS);
+    colHi.setAttribute("x", Bx + sj * CS);
+    cHi.setAttribute("x", Cx + sj * CS);
+    cHi.setAttribute("y", Cy + si * CS);
+    var terms = [];
+    for (var t = 0; t < 3; t++) terms.push(MA[si][t] + "·" + MB[t][sj]);
+    arith.textContent = "C" + SUBD[si] + SUBD[sj] + " = " + terms.join(" + ") + " = " + MC[si][sj];
+  }
+  document.getElementById("mnext").addEventListener("click", function () { step = (step + 1) % 4; renderMul(); });
+  document.getElementById("mprev").addEventListener("click", function () { step = (step + 3) % 4; renderMul(); });
+  STEPS.forEach(function (ij, idx) {
+    var hit = el(svgM, "rect", {
+      x: Cx + ij[1] * CS, y: Cy + ij[0] * CS, width: CS, height: CS,
+      fill: "transparent", style: "cursor: pointer;", tabindex: 0, role: "button",
+      "aria-label": "show how entry C row " + (ij[0] + 1) + " column " + (ij[1] + 1) + " is computed"
+    });
+    function pick() { step = idx; renderMul(); }
+    hit.addEventListener("click", pick);
+    hit.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" || ev.key === " ") { pick(); ev.preventDefault(); }
+    });
+  });
+  renderMul();
+
+  /* ---------- Figure 2: the 2x2 machine ---------- */
+  var svg2 = document.getElementById("mach-svg");
+  var PX0 = 316, PW = 380, PY0 = 24, PH = 380;
+  function gx(x) { return PX0 + ((x + 3) / 6) * PW; }
+  function gy(y) { return PY0 + ((3 - y) / 6) * PH; }
+
+  var defs = el(svg2, "defs", {});
+  var clip = el(defs, "clipPath", { id: "clip2" });
+  el(clip, "rect", { x: PX0, y: PY0, width: PW, height: PH });
+  function marker(id, color) {
+    var m = el(defs, "marker", { id: id, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" });
+    el(m, "path", { d: "M0,0 L10,5 L0,10 z", fill: color });
+  }
+  marker("arrB2", "var(--blue)");
+  marker("arrC2", "var(--crimson)");
+
+  el(svg2, "rect", { x: PX0, y: PY0, width: PW, height: PH, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  var gClip = el(svg2, "g", { "clip-path": "url(#clip2)" });
+  el(gClip, "line", { x1: gx(-3), y1: gy(0), x2: gx(3), y2: gy(0), stroke: "var(--grid)", "stroke-width": 1 });
+  el(gClip, "line", { x1: gx(0), y1: gy(-3), x2: gx(0), y2: gy(3), stroke: "var(--grid)", "stroke-width": 1 });
+
+  var gridLines = [];
+  for (k = -3; k <= 3; k++) {
+    gridLines.push({ v: true, k: k, ln: el(gClip, "line", { stroke: "var(--blue)", "stroke-width": 1, "stroke-opacity": 0.3 }) });
+    gridLines.push({ v: false, k: k, ln: el(gClip, "line", { stroke: "var(--blue)", "stroke-width": 1, "stroke-opacity": 0.3 }) });
+  }
+  el(gClip, "path", {
+    d: "M" + gx(0) + "," + gy(0) + " L" + gx(1) + "," + gy(0) + " L" + gx(1) + "," + gy(1) + " L" + gx(0) + "," + gy(1) + " Z",
+    fill: "none", stroke: "var(--muted)", "stroke-width": 1.5, "stroke-dasharray": "5 4"
+  });
+  var imgPoly = el(gClip, "path", { fill: "var(--amber-soft)", stroke: "var(--amber)", "stroke-width": 2, "stroke-linejoin": "round" });
+  var arr1 = el(gClip, "line", { stroke: "var(--blue)", "stroke-width": 2.5, "marker-end": "url(#arrB2)" });
+  var arr2 = el(gClip, "line", { stroke: "var(--crimson)", "stroke-width": 2.5, "marker-end": "url(#arrC2)" });
+
+  txt(svg2, 16, 40, "the machine", { "class": "axis-label" });
+  var mat2Y = [86, 116];
+  bracketAt(svg2, 52, 66, 158, 66);
+  var m2t = [
+    [txt(svg2, 130, mat2Y[0], "", entAttr()), txt(svg2, 196, mat2Y[0], "", entAttr())],
+    [txt(svg2, 130, mat2Y[1], "", entAttr()), txt(svg2, 196, mat2Y[1], "", entAttr())]
+  ];
+  txt(svg2, 16, mat2Y[0] + 15, "A =", { "font-size": "16", fill: "var(--ink)" });
+  var detTxt = txt(svg2, 16, 168, "", { fill: "var(--amber)", "font-weight": "bold", style: "font-style: normal; font-size: 15px; font-variant-numeric: tabular-nums;" });
+
+  txt(svg2, 16, 218, "the undo — A⁻¹", { "class": "axis-label" });
+  var inv2Y = [262, 292];
+  var invBrackets = [];
+  invBrackets.push(el(svg2, "path", { d: brD(52, 242, false, 66), fill: "none", stroke: "var(--ink)", "stroke-width": 1.4 }));
+  invBrackets.push(el(svg2, "path", { d: brD(210, 242, true, 66), fill: "none", stroke: "var(--ink)", "stroke-width": 1.4 }));
+  var i2t = [
+    [txt(svg2, 130, inv2Y[0], "", entAttr()), txt(svg2, 196, inv2Y[0], "", entAttr())],
+    [txt(svg2, 130, inv2Y[1], "", entAttr()), txt(svg2, 196, inv2Y[1], "", entAttr())]
+  ];
+  var noInv = txt(svg2, 16, 272, "does not exist", { fill: "var(--crimson)", style: "font-style: normal; font-size: 15px;" });
+
+  txt(svg2, 16, 346, "Ae₁ = column 1", { fill: "var(--blue)", "font-size": "14" });
+  txt(svg2, 16, 368, "Ae₂ = column 2", { fill: "var(--crimson)", "font-size": "14" });
+  txt(svg2, 16, 390, "unit square → area |det|", { fill: "var(--amber)", "font-size": "14" });
+
+  function entAttr() { return { "text-anchor": "end", fill: "var(--ink)", style: "font-style: normal; font-size: 16px; font-variant-numeric: tabular-nums;" }; }
+  function brD(x0, y0, right, h) {
+    var d = right ? -8 : 8;
+    return "M" + (x0 + d) + "," + y0 + " L" + x0 + "," + y0 + " L" + x0 + "," + (y0 + h) + " L" + (x0 + d) + "," + (y0 + h);
+  }
+  function bracketAt(svg, x0, y0, x1, h) {
+    el(svg, "path", { d: brD(x0, y0, false, h), fill: "none", stroke: "var(--ink)", "stroke-width": 1.4 });
+    el(svg, "path", { d: brD(x1 + 52, y0, true, h), fill: "none", stroke: "var(--ink)", "stroke-width": 1.4 });
+  }
+
+  var sa = document.getElementById("ma"), sb = document.getElementById("mb"),
+      sc = document.getElementById("mc"), sd = document.getElementById("md");
+  var saV = document.getElementById("maval"), sbV = document.getElementById("mbval"),
+      scV = document.getElementById("mcval"), sdV = document.getElementById("mdval");
+  var detEl = document.getElementById("detval"), areaEl = document.getElementById("areaval");
+  var flipFlag = document.getElementById("flipflag"), singFlag = document.getElementById("singflag");
+
+  function render2() {
+    var a = parseFloat(sa.value), b = parseFloat(sb.value), c = parseFloat(sc.value), d = parseFloat(sd.value);
+    saV.textContent = fmt(a, 1); sbV.textContent = fmt(b, 1); scV.textContent = fmt(c, 1); sdV.textContent = fmt(d, 1);
+    function ap(x, y) { return [a * x + b * y, c * x + d * y]; }
+    gridLines.forEach(function (g) {
+      var p, q;
+      if (g.v) { p = ap(g.k, -3.4); q = ap(g.k, 3.4); }
+      else { p = ap(-3.4, g.k); q = ap(3.4, g.k); }
+      g.ln.setAttribute("x1", gx(p[0])); g.ln.setAttribute("y1", gy(p[1]));
+      g.ln.setAttribute("x2", gx(q[0])); g.ln.setAttribute("y2", gy(q[1]));
+    });
+    var e1 = ap(1, 0), e2 = ap(0, 1), e12 = ap(1, 1);
+    imgPoly.setAttribute("d",
+      "M" + gx(0) + "," + gy(0) + " L" + gx(e1[0]) + "," + gy(e1[1]) +
+      " L" + gx(e12[0]) + "," + gy(e12[1]) + " L" + gx(e2[0]) + "," + gy(e2[1]) + " Z");
+    arr1.setAttribute("x1", gx(0)); arr1.setAttribute("y1", gy(0));
+    arr1.setAttribute("x2", gx(e1[0])); arr1.setAttribute("y2", gy(e1[1]));
+    arr2.setAttribute("x1", gx(0)); arr2.setAttribute("y1", gy(0));
+    arr2.setAttribute("x2", gx(e2[0])); arr2.setAttribute("y2", gy(e2[1]));
+    arr1.setAttribute("visibility", Math.abs(e1[0]) + Math.abs(e1[1]) < 0.04 ? "hidden" : "visible");
+    arr2.setAttribute("visibility", Math.abs(e2[0]) + Math.abs(e2[1]) < 0.04 ? "hidden" : "visible");
+
+    m2t[0][0].textContent = fmt(a, 1); m2t[0][1].textContent = fmt(b, 1);
+    m2t[1][0].textContent = fmt(c, 1); m2t[1][1].textContent = fmt(d, 1);
+    var det = a * d - b * c;
+    detTxt.textContent = "det A = " + fmt(det, 2);
+    detEl.textContent = fmt(det, 2);
+    areaEl.textContent = fmt(Math.abs(det), 2);
+    var sing = Math.abs(det) < 0.05;
+    singFlag.classList.toggle("on", sing);
+    flipFlag.classList.toggle("on", det < -0.05);
+    noInv.setAttribute("visibility", sing ? "visible" : "hidden");
+    invBrackets.forEach(function (p) { p.setAttribute("visibility", sing ? "hidden" : "visible"); });
+    var show = sing ? ["", "", "", ""] : [fmt(d / det, 2), fmt(-b / det, 2), fmt(-c / det, 2), fmt(a / det, 2)];
+    i2t[0][0].textContent = show[0]; i2t[0][1].textContent = show[1];
+    i2t[1][0].textContent = show[2]; i2t[1][1].textContent = show[3];
+  }
+  [sa, sb, sc, sd].forEach(function (sl) { sl.addEventListener("input", render2); });
+  function preset2(a, b, c, d) { sa.value = a; sb.value = b; sc.value = c; sd.value = d; render2(); }
+  document.getElementById("pid").addEventListener("click", function () { preset2(1, 0, 0, 1); });
+  document.getElementById("pstretch").addEventListener("click", function () { preset2(2, 0, 0, 0.5); });
+  document.getElementById("prot").addEventListener("click", function () { preset2(0.7, -0.7, 0.7, 0.7); });
+  document.getElementById("pshear").addEventListener("click", function () { preset2(1, 0.6, 0, 1); });
+  document.getElementById("pflip").addEventListener("click", function () { preset2(0, 1, 1, 0); });
+  document.getElementById("pcollapse").addEventListener("click", function () { preset2(1, 2, 0.5, 1); });
+  render2();
+
+  /* ---------- Figure 3: quadratic form ---------- */
+  var svg3 = document.getElementById("qf-svg");
+  var QR = 1.5;
+  function qx(u) { return PX0 + ((u + QR) / (2 * QR)) * PW; }
+  function qy(v) { return PY0 + ((QR - v) / (2 * QR)) * PH; }
+
+  var defs3 = el(svg3, "defs", {});
+  var clip3 = el(defs3, "clipPath", { id: "clip3" });
+  el(clip3, "rect", { x: PX0, y: PY0, width: PW, height: PH });
+  el(svg3, "rect", { x: PX0, y: PY0, width: PW, height: PH, fill: "none", stroke: "var(--line)", "stroke-width": 1 });
+  var g3 = el(svg3, "g", { "clip-path": "url(#clip3)" });
+
+  var G3 = 30, cellW = PW / G3;
+  var cells = [];
+  for (i = 0; i < G3; i++) for (j = 0; j < G3; j++) {
+    var cxw = -QR + (i + 0.5) * (2 * QR / G3), cyw = QR - (j + 0.5) * (2 * QR / G3);
+    cells.push({
+      x: cxw, y: cyw,
+      r: el(g3, "rect", { x: PX0 + i * cellW, y: PY0 + j * cellW, width: cellW + 0.5, height: cellW + 0.5, fill: "none", "fill-opacity": 0 })
+    });
+  }
+  var axis1 = el(g3, "line", { stroke: "var(--amber)", "stroke-width": 1.6 });
+  var axis2 = el(g3, "line", { stroke: "var(--amber)", "stroke-width": 1.6, "stroke-dasharray": "5 4" });
+  var curvePos = el(g3, "path", { fill: "none", stroke: "var(--blue)", "stroke-width": 2.2, "stroke-linecap": "round" });
+  var curveNeg = el(g3, "path", { fill: "none", stroke: "var(--crimson)", "stroke-width": 2.2, "stroke-linecap": "round" });
+
+  txt(svg3, 16, 40, "the symmetric machine", { "class": "axis-label" });
+  var mat3Y = [86, 116];
+  bracketAt(svg3, 52, 66, 158, 66);
+  var m3t = [
+    [txt(svg3, 130, mat3Y[0], "", entAttr()), txt(svg3, 196, mat3Y[0], "", entAttr())],
+    [txt(svg3, 130, mat3Y[1], "", entAttr()), txt(svg3, 196, mat3Y[1], "", entAttr())]
+  ];
+  txt(svg3, 16, mat3Y[0] + 15, "M =", { "font-size": "16", fill: "var(--ink)" });
+  var eig1Txt = txt(svg3, 16, 172, "", { fill: "var(--amber)", "font-weight": "bold", style: "font-style: normal; font-size: 15px; font-variant-numeric: tabular-nums;" });
+  var eig2Txt = txt(svg3, 16, 196, "", { fill: "var(--amber)", "font-weight": "bold", style: "font-style: normal; font-size: 15px; font-variant-numeric: tabular-nums;" });
+
+  txt(svg3, 16, 290, "xᵀMx > 0", { fill: "var(--blue)", "font-size": "14" });
+  txt(svg3, 16, 312, "xᵀMx < 0", { fill: "var(--crimson)", "font-size": "14" });
+  txt(svg3, 16, 334, "level sets xᵀMx = ±1", { "class": "axis-label" });
+  txt(svg3, 16, 356, "eigen axes (solid λ₁,", { fill: "var(--amber)", "font-size": "14" });
+  txt(svg3, 16, 376, "dashed λ₂)", { fill: "var(--amber)", "font-size": "14" });
+
+  var qaS = document.getElementById("qa"), qbS = document.getElementById("qb"),
+      qcS = document.getElementById("qc"), qlS = document.getElementById("qlam");
+  var qaV = document.getElementById("qaval"), qbV = document.getElementById("qbval"),
+      qcV = document.getElementById("qcval"), qlV = document.getElementById("qlamval");
+  var l1El = document.getElementById("l1val"), l2El = document.getElementById("l2val");
+  var pdFlag = document.getElementById("pdflag"), psdFlag = document.getElementById("psdflag"), indFlag = document.getElementById("indflag");
+
+  var EPS = 0.03;
+  function curvesFor(lu, lv, s) {
+    var segs = [], pts, t, n;
+    if (Math.abs(lu) < EPS && Math.abs(lv) < EPS) return segs;
+    if (lu * s > 0 && lv * s > 0) {
+      var ru = 1 / Math.sqrt(Math.abs(lu)), rv = 1 / Math.sqrt(Math.abs(lv));
+      pts = [];
+      for (n = 0; n <= 120; n++) { t = (n / 120) * 2 * Math.PI; pts.push([ru * Math.cos(t), rv * Math.sin(t)]); }
+      segs.push(pts);
+    } else if (lu * s > 0 && lv * s < 0) {
+      var au = 1 / Math.sqrt(Math.abs(lu)), bv = 1 / Math.sqrt(Math.abs(lv));
+      [1, -1].forEach(function (sgn) {
+        pts = [];
+        for (n = 0; n <= 80; n++) { t = -1.9 + (n / 80) * 3.8; pts.push([sgn * au * Math.cosh(t), bv * Math.sinh(t)]); }
+        segs.push(pts);
+      });
+    } else if (lu * s < 0 && lv * s > 0) {
+      var au2 = 1 / Math.sqrt(Math.abs(lu)), bv2 = 1 / Math.sqrt(Math.abs(lv));
+      [1, -1].forEach(function (sgn) {
+        pts = [];
+        for (n = 0; n <= 80; n++) { t = -1.9 + (n / 80) * 3.8; pts.push([au2 * Math.sinh(t), sgn * bv2 * Math.cosh(t)]); }
+        segs.push(pts);
+      });
+    } else if (lu * s > 0 && Math.abs(lv) < EPS) {
+      var ru2 = 1 / Math.sqrt(Math.abs(lu));
+      [1, -1].forEach(function (sgn) { segs.push([[sgn * ru2, -2.3], [sgn * ru2, 2.3]]); });
+    } else if (lv * s > 0 && Math.abs(lu) < EPS) {
+      var rv2 = 1 / Math.sqrt(Math.abs(lv));
+      [1, -1].forEach(function (sgn) { segs.push([[-2.3, sgn * rv2], [2.3, sgn * rv2]]); });
+    }
+    return segs;
+  }
+
+  function render3() {
+    var a = parseFloat(qaS.value), b = parseFloat(qbS.value), c = parseFloat(qcS.value), lam = parseFloat(qlS.value);
+    qaV.textContent = fmt(a, 1); qbV.textContent = fmt(b, 1); qcV.textContent = fmt(c, 1); qlV.textContent = lam.toFixed(2);
+    var A = a + lam, C = c + lam, B = b;
+    m3t[0][0].textContent = fmt(A, 2); m3t[0][1].textContent = fmt(B, 2);
+    m3t[1][0].textContent = fmt(B, 2); m3t[1][1].textContent = fmt(C, 2);
+    var mean = (A + C) / 2, rad = Math.sqrt(((A - C) / 2) * ((A - C) / 2) + B * B);
+    var l1 = mean + rad, l2 = mean - rad;
+    var th = 0.5 * Math.atan2(2 * B, A - C);
+    var v1 = [Math.cos(th), Math.sin(th)], v2 = [-Math.sin(th), Math.cos(th)];
+    eig1Txt.textContent = "λ₁ = " + fmt(l1, 2);
+    eig2Txt.textContent = "λ₂ = " + fmt(l2, 2);
+    l1El.textContent = fmt(l1, 2);
+    l2El.textContent = fmt(l2, 2);
+    pdFlag.classList.toggle("on", l2 > EPS);
+    psdFlag.classList.toggle("on", Math.abs(l2) <= EPS && l1 > EPS);
+    indFlag.classList.toggle("on", l2 < -EPS);
+
+    var qmax = 0.001, vals = [];
+    cells.forEach(function (cl) {
+      var q = A * cl.x * cl.x + 2 * B * cl.x * cl.y + C * cl.y * cl.y;
+      vals.push(q);
+      if (Math.abs(q) > qmax) qmax = Math.abs(q);
+    });
+    cells.forEach(function (cl, idx) {
+      var q = vals[idx];
+      cl.r.setAttribute("fill", q >= 0 ? "var(--blue)" : "var(--crimson)");
+      cl.r.setAttribute("fill-opacity", (0.05 + 0.3 * Math.min(1, Math.abs(q) / qmax)).toFixed(3));
+    });
+
+    axis1.setAttribute("x1", qx(-2.3 * v1[0])); axis1.setAttribute("y1", qy(-2.3 * v1[1]));
+    axis1.setAttribute("x2", qx(2.3 * v1[0])); axis1.setAttribute("y2", qy(2.3 * v1[1]));
+    axis2.setAttribute("x1", qx(-2.3 * v2[0])); axis2.setAttribute("y1", qy(-2.3 * v2[1]));
+    axis2.setAttribute("x2", qx(2.3 * v2[0])); axis2.setAttribute("y2", qy(2.3 * v2[1]));
+
+    function toPath(segs) {
+      var d = "";
+      segs.forEach(function (pts) {
+        pts.forEach(function (p, n) {
+          var wx = p[0] * v1[0] + p[1] * v2[0], wy = p[0] * v1[1] + p[1] * v2[1];
+          d += (n ? "L" : "M") + qx(wx).toFixed(1) + "," + qy(wy).toFixed(1);
+        });
+      });
+      return d;
+    }
+    curvePos.setAttribute("d", toPath(curvesFor(l1, l2, 1)));
+    curveNeg.setAttribute("d", toPath(curvesFor(l1, l2, -1)));
+  }
+  [qaS, qbS, qcS, qlS].forEach(function (sl) { sl.addEventListener("input", render3); });
+  function preset3(a, b, c, lam) { qaS.value = a; qbS.value = b; qcS.value = c; qlS.value = lam; render3(); }
+  document.getElementById("qpd").addEventListener("click", function () { preset3(2, 1, 2, 0); });
+  document.getElementById("qsing").addEventListener("click", function () { preset3(1, 1, 1, 0); });
+  document.getElementById("qsad").addEventListener("click", function () { preset3(1, 0, -1, 0); });
+  render3();
+})();
+</script>
+<footer class="site prose">Part of <a href="./">SML Study Games</a> · the moves in action: <a href="residual.html">the residual</a> · <a href="regimes.html">regimes &amp; ridge</a> · <a href="coefficients.html">reading coefficients</a> · <a href="gradboost.html">gradient boosting</a></footer>
+</body>
+</html>
