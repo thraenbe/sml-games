@@ -251,6 +251,49 @@
   }
   .takeaway p { margin: 0; }
 
+  .task {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem 0.9rem;
+    margin: 1.1rem 0;
+  }
+  .task .tag {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.55rem;
+  }
+  .task .tag .no { color: var(--crimson); }
+  .task .q { margin: 0 0 0.4rem; }
+  .task .eq {
+    font-size: 1.02rem; text-align: center; padding: 0.5rem 0.6rem; margin: 0.6rem 0;
+    overflow-x: auto; white-space: nowrap;
+  }
+  details.sol {
+    border-top: 1px dashed var(--line);
+    margin-top: 0.85rem;
+    padding: 0.6rem 0 0.25rem;
+  }
+  details.sol summary {
+    cursor: pointer;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue);
+    user-select: none;
+  }
+  details.sol summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  details.sol[open] summary { color: var(--muted); }
+  .sol-body { padding-top: 0.55rem; font-size: 0.96rem; color: var(--ink); }
+  .sol-body p { margin: 0 0 0.7rem; }
+  .sol-body p:last-child { margin-bottom: 0; }
+  .pts {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.68rem; letter-spacing: 0.05em;
+    color: var(--amber);
+    white-space: nowrap;
+  }
+
   .backlink {
     max-width: 41rem;
     margin: 1.6rem auto -3rem;
@@ -521,6 +564,167 @@
       is asking you to run this one comparison — the arithmetic before it (joint → marginal →
       posterior) is three multiplications and a division, drawn as areas in Figure 1.
     </p>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">The exam question · a full-marks answer</span>Question 3, answered as you'd write it</h2>
+  <p>
+    Here is the complete task and a solution at full-marks level — nothing more than the rubric
+    pays for, nothing less. Note how short it is once the machine above is internalized: the whole
+    answer is one joint table, one risk comparison, and one inequality in π.
+  </p>
+  <div class="task">
+    <p class="tag"><span class="no">The task · 5 points</span><span>≈12 min · medium · Bayesian decision theory</span></p>
+    <p class="q">
+      Let <var>X</var> ∈ {0, 1} and <var>Y</var> ∈ {0, 1} with class prior
+      ℙ(<var>Y</var>&#61;1) &#61; 2/5, ℙ(<var>Y</var>&#61;0) &#61; 3/5 and class-conditionals
+      ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;1) &#61; 4/5, ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;0) &#61; 1/5.
+    </p>
+    <p class="q">
+      <strong>(a)</strong> (2 pt) Compute the marginal μ(<var>x</var>) &#61; ℙ(<var>X</var>&#61;<var>x</var>)
+      and η(<var>x</var>) &#61; ℙ(<var>Y</var>&#61;1 | <var>X</var>&#61;<var>x</var>) for
+      <var>x</var> ∈ {0, 1}. State the 0–1 Bayes classifier <var>f</var>° and its Bayes error
+      ℙ(<var>f</var>°(<var>X</var>) ≠ <var>Y</var>).<br>
+      <strong>(b)</strong> (1.5 pt) Now use the asymmetric loss with
+      ℓ(<var>y</var>&#61;1, <var>ŷ</var>&#61;0) &#61; <var>a</var>,
+      ℓ(<var>y</var>&#61;0, <var>ŷ</var>&#61;1) &#61; 1 (correct predictions costing 0). Derive the
+      Bayes decision rule in terms of η(<var>x</var>) (assume <var>a</var> &gt; 0).<br>
+      <strong>(c)</strong> (1.5 pt) Keep the standard 0–1 loss and the fixed class-conditionals,
+      but treat the prior π &#61; ℙ(<var>Y</var>&#61;1) as adjustable. Find the smallest π for
+      which the Bayes decision at <var>x</var> &#61; 0 is 1 (breaking ties toward 1).
+    </p>
+  </div>
+  <div class="task">
+    <p class="tag"><span>Full-marks answer</span><span class="pts">5 / 5 pt</span></p>
+    <p class="q">
+      <strong>(a)</strong> Joint &#61; prior × conditional:
+      ℙ(<var>X</var>&#61;1, <var>Y</var>&#61;1) &#61; <sup>2</sup>⁄<sub>5</sub> · <sup>4</sup>⁄<sub>5</sub> &#61; <sup>8</sup>⁄<sub>25</sub>,
+      ℙ(<var>X</var>&#61;0, <var>Y</var>&#61;1) &#61; <sup>2</sup>⁄<sub>25</sub>,
+      ℙ(<var>X</var>&#61;1, <var>Y</var>&#61;0) &#61; <sup>3</sup>⁄<sub>25</sub>,
+      ℙ(<var>X</var>&#61;0, <var>Y</var>&#61;0) &#61; <sup>12</sup>⁄<sub>25</sub>.
+      Hence μ(1) &#61; <sup>11</sup>⁄<sub>25</sub>, μ(0) &#61; <sup>14</sup>⁄<sub>25</sub> and
+      η(1) &#61; (8/25)/(11/25) &#61; <sup>8</sup>⁄<sub>11</sub>,
+      η(0) &#61; (2/25)/(14/25) &#61; <sup>1</sup>⁄<sub>7</sub> <span class="pts">+1 pt</span>.
+      Since η(1) &gt; ½ and η(0) &lt; ½: <var>f</var>°(1) &#61; 1, <var>f</var>°(0) &#61; 0
+      <span class="pts">+0.5 pt</span>. Bayes error
+      &#61; Σ<sub><var>x</var></sub> μ(<var>x</var>) min(η(<var>x</var>), 1 − η(<var>x</var>))
+      &#61; <sup>11</sup>⁄<sub>25</sub> · <sup>3</sup>⁄<sub>11</sub> + <sup>14</sup>⁄<sub>25</sub> · <sup>1</sup>⁄<sub>7</sub>
+      &#61; <sup>1</sup>⁄<sub>5</sub> <span class="pts">+0.5 pt</span>.
+    </p>
+    <p class="q">
+      <strong>(b)</strong> Conditional risks: R(1 | <var>x</var>) &#61; 1 · (1 − η(<var>x</var>)),
+      R(0 | <var>x</var>) &#61; <var>a</var> · η(<var>x</var>). Predict 1 iff
+      1 − η(<var>x</var>) &lt; <var>a</var>&#8202;η(<var>x</var>) ⟺
+      η(<var>x</var>) &gt; 1/(1 + <var>a</var>) <span class="pts">+1.5 pt</span>.
+      (At η &#61; 1/(1+<var>a</var>) both actions have equal risk, so either tie-break is optimal.)
+    </p>
+    <p class="q">
+      <strong>(c)</strong> With ℙ(<var>X</var>&#61;0 | <var>Y</var>&#61;1) &#61; 1/5 and
+      ℙ(<var>X</var>&#61;0 | <var>Y</var>&#61;0) &#61; 4/5 fixed, the posterior at
+      <var>x</var> &#61; 0 is η(0) &#61; <sup>1</sup>⁄<sub>5</sub>&#8202;π / (<sup>1</sup>⁄<sub>5</sub>&#8202;π + <sup>4</sup>⁄<sub>5</sub>(1 − π))
+      <span class="pts">+0.5 pt</span>. Breaking ties toward 1, the decision at <var>x</var> &#61; 0
+      is 1 iff η(0) ≥ ½ ⟺ <sup>1</sup>⁄<sub>5</sub>&#8202;π ≥ <sup>4</sup>⁄<sub>5</sub>(1 − π) ⟺
+      π ≥ 4(1 − π) ⟺ π ≥ <sup>4</sup>⁄<sub>5</sub>. The smallest such prior is
+      π &#61; <sup>4</sup>⁄<sub>5</sub> <span class="pts">+1 pt</span>.
+    </p>
+  </div>
+</section>
+
+<section class="prose">
+  <h2><span class="partref">Practice · same machine, new numbers</span>Two more, before the real exam</h2>
+  <p>
+    Both tasks run on the identical recipe — joint → marginal → posterior → compare risks. Do them
+    on paper first; each hides its full solution below.
+  </p>
+  <div class="task">
+    <p class="tag"><span class="no">Practice 1</span><span>the timid prior</span></p>
+    <p class="q">
+      A spam filter: <var>Y</var> &#61; 1 means spam, and <var>X</var> ∈ {0, 1} flags a suspicious
+      link. Prior ℙ(<var>Y</var>&#61;1) &#61; 1/5, class-conditionals
+      ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;1) &#61; 3/5,
+      ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;0) &#61; 1/5.
+    </p>
+    <p class="q">
+      <strong>(a)</strong> Compute μ(<var>x</var>) and η(<var>x</var>) for
+      <var>x</var> ∈ {0, 1}, state the 0–1 Bayes classifier <var>f</var>° and its Bayes error.
+      Something unusual happens — say what.<br>
+      <strong>(b)</strong> Using the loss ℓ(<var>y</var>&#61;1, <var>ŷ</var>&#61;0) &#61; <var>a</var>,
+      ℓ(<var>y</var>&#61;0, <var>ŷ</var>&#61;1) &#61; 1 and breaking ties toward 1, find the
+      smallest miss cost <var>a</var> for which the decision at <var>x</var> &#61; 1 becomes 1.
+    </p>
+    <details class="sol">
+      <summary>show solution</summary>
+      <div class="sol-body">
+        <p>
+          <strong>(a)</strong> Joint: ℙ(1,1) &#61; <sup>1</sup>⁄<sub>5</sub> · <sup>3</sup>⁄<sub>5</sub> &#61; <sup>3</sup>⁄<sub>25</sub>,
+          ℙ(0,1) &#61; <sup>2</sup>⁄<sub>25</sub>, ℙ(1,0) &#61; <sup>4</sup>⁄<sub>5</sub> · <sup>1</sup>⁄<sub>5</sub> &#61; <sup>4</sup>⁄<sub>25</sub>,
+          ℙ(0,0) &#61; <sup>16</sup>⁄<sub>25</sub>. So μ(1) &#61; <sup>7</sup>⁄<sub>25</sub>,
+          μ(0) &#61; <sup>18</sup>⁄<sub>25</sub>, and
+          η(1) &#61; (3/25)/(7/25) &#61; <sup>3</sup>⁄<sub>7</sub>,
+          η(0) &#61; (2/25)/(18/25) &#61; <sup>1</sup>⁄<sub>9</sub>.
+        </p>
+        <p>
+          The unusual part: η(1) &#61; 3/7 &lt; ½ too — so <var>f</var>°(1) &#61; 0 and
+          <var>f</var>°(0) &#61; 0. <strong>The Bayes classifier is constant</strong>: the link
+          flag is genuine evidence (3/7 ≫ the prior 1/5), but not enough to clear ½, so the
+          optimal 0–1 rule ignores <var>X</var> entirely. Bayes error
+          &#61; <sup>7</sup>⁄<sub>25</sub> · <sup>3</sup>⁄<sub>7</sub> + <sup>18</sup>⁄<sub>25</sub> · <sup>1</sup>⁄<sub>9</sub>
+          &#61; <sup>3</sup>⁄<sub>25</sub> + <sup>2</sup>⁄<sub>25</sub> &#61; <sup>1</sup>⁄<sub>5</sub>
+          — it simply pays the whole spam mass ℙ(<var>Y</var>&#61;1) &#61; 1/5, as a constant-0
+          rule must.
+        </p>
+        <p>
+          <strong>(b)</strong> By part (b) of the exam, predict 1 at <var>x</var> &#61; 1 (ties
+          toward 1) iff η(1) ≥ 1/(1 + <var>a</var>) ⟺ <sup>3</sup>⁄<sub>7</sub> ≥ 1/(1 + <var>a</var>)
+          ⟺ 3(1 + <var>a</var>) ≥ 7 ⟺ <var>a</var> ≥ <sup>4</sup>⁄<sub>3</sub>. The smallest miss
+          cost is <var>a</var> &#61; <strong>4/3</strong>: price a missed spam just a third more
+          than a false alarm and the flag starts to matter again. (Check it in Figure 2's machine:
+          the threshold must drop below 3/7.)
+        </p>
+      </div>
+    </details>
+  </div>
+  <div class="task">
+    <p class="tag"><span class="no">Practice 2</span><span>the tipping prior, re-run</span></p>
+    <p class="q">
+      Keep the standard 0–1 loss and fix the class-conditionals
+      ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;1) &#61; 3/4,
+      ℙ(<var>X</var>&#61;1 | <var>Y</var>&#61;0) &#61; 1/4; the prior
+      π &#61; ℙ(<var>Y</var>&#61;1) is adjustable and ties break toward 1.
+    </p>
+    <p class="q">
+      <strong>(a)</strong> Find the smallest π for which the Bayes decision at
+      <var>x</var> &#61; 0 is 1.<br>
+      <strong>(b)</strong> Repeat with the asymmetric loss
+      ℓ(<var>y</var>&#61;1, <var>ŷ</var>&#61;0) &#61; 3, ℓ(<var>y</var>&#61;0, <var>ŷ</var>&#61;1) &#61; 1.
+      Compare the two answers in one sentence.
+    </p>
+    <details class="sol">
+      <summary>show solution</summary>
+      <div class="sol-body">
+        <p>
+          <strong>(a)</strong> With ℙ(<var>X</var>&#61;0 | <var>Y</var>&#61;1) &#61; 1/4 and
+          ℙ(<var>X</var>&#61;0 | <var>Y</var>&#61;0) &#61; 3/4, the posterior at
+          <var>x</var> &#61; 0 is
+          η(0) &#61; <sup>1</sup>⁄<sub>4</sub>&#8202;π / (<sup>1</sup>⁄<sub>4</sub>&#8202;π + <sup>3</sup>⁄<sub>4</sub>(1 − π))
+          &#61; π / (3 − 2π). The decision at <var>x</var> &#61; 0 is 1 iff η(0) ≥ ½ ⟺
+          2π ≥ 3 − 2π ⟺ π ≥ <sup>3</sup>⁄<sub>4</sub>. Smallest prior:
+          π &#61; <strong>3/4</strong>.
+        </p>
+        <p>
+          <strong>(b)</strong> Now the threshold is 1/(1 + <var>a</var>) &#61; ¼:
+          π / (3 − 2π) ≥ ¼ ⟺ 4π ≥ 3 − 2π ⟺ 6π ≥ 3 ⟺ π ≥ <sup>1</sup>⁄<sub>2</sub>. Smallest
+          prior: π &#61; <strong>1/2</strong>.
+        </p>
+        <p>
+          Comparison: tripling the miss cost does the same job as a much heavier prior — the
+          required π drops from 3/4 to 1/2, because costs and priors enter the decision only
+          through the single product <var>a</var>&#8202;η ≷ 1 − η. That is the synthesis section
+          in one line.
+        </p>
+      </div>
+    </details>
   </div>
 </section>
 
